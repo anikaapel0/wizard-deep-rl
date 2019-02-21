@@ -103,3 +103,16 @@ class Featurizer(object):
         state = list(player.get_state())
         arr += state[1:]
         return arr
+
+    def get_state_size(self):
+        count = 0
+        # played cards
+        if self.count_cards:
+            count += 54
+
+        count += 126
+
+        return count
+
+
+

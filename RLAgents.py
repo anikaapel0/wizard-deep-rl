@@ -10,18 +10,19 @@ class RLAgent(AverageRandomPlayer):
 
     def __init__(self, estimator=None, policy=None, featurizer=None):
         super().__init__()
+        if featurizer is None:
+            self.featurizer = Featurizers.Featurizer()
+        else:
+            self.featurizer = featurizer
         if estimator is None:
-            self.estimator = Estimators.DQNEstimator()
+            self.estimator = Estimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
         else:
             self.estimator = estimator
         if policy is None:
             self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=0.1)
         else:
             self.policy = policy
-        if featurizer is None:
-            self.featurizer = Featurizers.Featurizer()
-        else:
-            self.featurizer = featurizer
+
         self.old_state = None
         self.old_score = 0
         self.old_action = None

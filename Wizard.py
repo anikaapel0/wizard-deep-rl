@@ -1,5 +1,6 @@
 from Game import Game
 from Player import RandomPlayer, AverageRandomPlayer
+from RLAgents import RLAgent
 from random import seed, getstate
 
 
@@ -15,6 +16,7 @@ class Wizard(object):
             assert num_players >= 2, "Not enough players!" \
                                      "Give an array of players or a" \
                                      "number of players between [2-6]"
+
             for player in range(num_players):
                 # Initialize all players
                 # print("Creating players.")
@@ -39,7 +41,7 @@ class Wizard(object):
             score = game.play()
             for i in range(self.num_players):
                 self.scores[i] += score[i]
-            # print("Scores: {}".format(self.scores))
+            #print("Scores: {}".format(self.scores))
         # print("Final scores: {}".format(self.scores))
         for player in self.players:
             player.reset_score()
@@ -49,6 +51,6 @@ class Wizard(object):
 if __name__ == "__main__":
     print("Playing a random game of 4 players.")
     seed(2)
-    wiz = Wizard(4)
+    wiz = Wizard(4, use_agent=True)
     print(getstate())
     print(wiz.play())

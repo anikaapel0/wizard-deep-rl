@@ -1,8 +1,7 @@
 import random
 import numpy as np
+import tensorflow as tf
 from Card import Card
-from keras.models import Model, model_from_json
-from keras.layers import Dense, Input
 
 
 class Estimator(object):
@@ -32,17 +31,59 @@ class Estimator(object):
 
 
 class DQNEstimator(Estimator):
+    n_hidden_1 = 256
+    n_hidden_2 = 512
+    n_hidden_3 = 1024
 
-    def __init__(self, model=None, memory=100000, batch_size=1024, gamma=1,
+    def __init__(self, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
                  target_update=5000):
-        self.model = model
-        self.target_model = None if model is None else model.copy()
+        tf.reset_default_graph()
+        self.input_shape = input_shape
+        self.output_shape = output_shape
         self.gamma = gamma
-        self.memory = [([], 0, 0, [])]*memory
+        self.memory = [([], 0, 0, [])] * memory
         self.batch_size = batch_size
         self.target_update = target_update
-        self.update_rate = max(1, batch_size//8)
+        self.update_rate = max(1, batch_size // 8)
         self.t = 0
+        self._prediction = None
+        self._optimizer = None
+        self._loss = None
+        self._x = None
+        self._y = None
+        self._target = None
+        self._var_init = None
+        self._session = None
+        self._init_model()
+        self.print_graph()
+
+    def dqn_network(self, input_size, scope_name, act=tf.nn.relu):
+
+        with tf.variable_scope(scope_name):
+            hidden1 = tf.layers.dense(input_size, self.n_hidden_1, activation=act, name=scope_name + "_1")
+            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, activation=act, name=scope_name + "_2")
+            hidden3 = tf.layers.dense(hidden2, self.n_hidden_3, activation=act, name=scope_name + "_3")
+
+            prediction = tf.layers.dense(hidden3, self.output_shape)
+
+        return prediction
+
+    def _init_model(self):
+        with tf.variable_scope("Input_Data"):
+            self._x = tf.placeholder("float", [None, self.input_shape], name="state")
+            self._y = tf.placeholder("float", [None, self.output_shape], name="output")
+
+        self._prediction = self.dqn_network(input_size=self._x, scope_name="Q_Primary")
+        self._target = self.dqn_network(input_size=self._x, scope_name="Q_Target")
+
+        with tf.variable_scope("Learning"):
+            loss = tf.losses.mean_squared_error(self._y, self._prediction)
+            self._optimizer = tf.train.AdamOptimizer().minimize(loss)
+
+        self._var_init = tf.global_variables_initializer()
+
+        self._session = tf.Session()
+        self._session.run(self._var_init)
 
     def update(self, s, a, r, s_prime):
         """
@@ -57,13 +98,12 @@ class DQNEstimator(Estimator):
         # Circular buffer for memory.
         self.memory[self.t % len(self.memory)] = (s, a, r, s_prime)
         self.t += 1
-        if self.t == len(self.memory)*2:
+        if self.t == len(self.memory) * 2:
             # Prevent overflow, this might cause skidding in the update rate
             self.t = len(self.memory)
 
         if self.t >= len(self.memory) and self.t % self.target_update == 0:
-            if self.target_model is not None:
-                self.update_target()
+            self.update_target()
         # If memory is full, we can start training
         if self.t >= len(self.memory) and self.t % self.update_rate == 0:
             # Randomly sample from experience
@@ -84,73 +124,92 @@ class DQNEstimator(Estimator):
                 if ss_prime is not None:
                     # ss_prime is not None, so this is not a terminal state.
                     q_sa = self.predict_target(ss_prime)
-                    y[i, aa] = rr/10 + self.gamma*np.max(q_sa)
+                    y[i, aa] = rr / 10 + self.gamma * np.max(q_sa)
                 else:
                     # ss_prime is None so this is a terminal state.
-                    y[i, aa] = rr/10
+                    y[i, aa] = rr / 10
                 i += 1
 
-            self.model.train_on_batch(x, y)
+            self.train_model(x, y)
+
+    def train_model(self, batch_x, batch_y):
+        # train model
+        num_batches = batch_x.shape[0]
+        size = batch_x.shape[1]
+        size_y = batch_y.shape[1]
+
+        for i in range(num_batches):
+            # train network
+            self._session.run([self._optimizer, self._loss],
+                              feed_dict={
+                                  self._x: np.resize(batch_x[i], (1, size)),
+                                  self._y: np.resize(batch_y[i], (1, size_y))
+                              })
 
     def predict(self, s):
-        if self.model is None:
-            print("Building NEW model.")
-            self.model = self.build_and_compile_model(s)
-        return self.model.predict(np.array(s)[np.newaxis, :])
+        feed_dict = {self._x: np.array(s)[np.newaxis, :]}
+        return self._session.run(self._prediction, feed_dict)
 
     def predict_target(self, s):
-        if self.target_model is None:
-            print("Copying model to target model.")
-            self.target_model = self.build_and_compile_model(s)
-            if self.model is not None:
-                self.update_target()
-        return self.target_model.predict(np.array(s)[np.newaxis, :])
+        feed_dict = {self._x: np.array(s)[np.newaxis, :]}
+        return self._session.run(self._target, feed_dict)
 
     def update_target(self):
-        weights = self.model.get_weights()
-        self.target_model.set_weights(weights)
+        print("TODO")  # TODO
 
-    def build_and_compile_model(self, s, activation="tanh",
-                                optimizer="adagrad", loss="mse"):
-        """
-        The model is 'lazily' initialized, so that we know the input size.
-        This method initializes the model of the estimator.
-        Args:
-            s: Sample input to the network.
-            activation: activation function for the hidden layers
-            optimizer: optimizer for the neural network
-            loss: loss function for the neural network
+        q_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="Q_Primary")
+        q_target_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="Q_Target")
 
-        """
-        input_layer = Input(shape=(len(s),))
-        denses = Dense(256, activation=activation,
-                       kernel_initializer="random_uniform")(input_layer)
-        denses = Dense(512, activation=activation,
-                       kernel_initializer="random_uniform")(denses)
-        denses = Dense(1024, activation=activation,
-                       kernel_initializer="random_uniform")(denses)
-        output = Dense(Card.DIFFERENT_CARDS, activation="linear")(denses)
+        assert len(q_vars) == len(q_target_vars)
 
-        model = Model(input_layer, output)
-        model.compile(optimizer=optimizer, loss=loss)
-        return model
+        # hard update
+        self._session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
-    def save(self, name):
+        # self.weight_target = self.weights
+        # self.biases_target = self.biases
+
+    def save(self, name="model-dqn"):
         print("Saving {}".format(name))
-        model_json = self.model.to_json()
-        json_filename = "{}.json".format(name)
-        with open(json_filename, "w") as json_file:
-            json_file.write(model_json)
-        weights_filename = "{}.h5".format(name)
-        self.model.save_weights(weights_filename)
-        print("Saved {}".format(name))
+        # create saver
+        saver = tf.train.Saver()
 
-    def load(self, name, optimizer="adagrad", loss="mse"):
-        json_filename = "{}.json".format(name)
-        weights_filename = "{}.h5".format(name)
-        json_file = open(json_filename, 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        self.model = model_from_json(loaded_model_json)
-        self.model.load_weights(weights_filename)
-        self.model.compile(optimizer=optimizer, loss=loss)
+        path = saver.save(self.session, "/tmp/{}.ckpt".format(name))
+
+        print("Saved in path {}".format(path))
+
+    def load(self, name="model-dqn"):
+        saver = tf.train.Saver()
+        saver.restore(self.session, "/tmp/{}.ckpt".format(name))
+
+    def default_weights(self, n_input, n_output):
+        weights = {
+            'h1': tf.Variable(tf.random_normal([n_input, self.n_hidden_1])),
+            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
+            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
+            'out': tf.Variable(tf.random_normal([self.n_hidden_3, n_output])),
+        }
+
+        return weights
+
+    def default_biases(self, n_output):
+        biases = {
+            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
+            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
+            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
+            'out': tf.Variable(tf.random_normal([n_output]))
+        }
+
+        return biases
+
+    def print_graph(self):
+        graph = tf.get_default_graph()
+
+        print(graph.get_operations())
+
+        # feed_dict = {self._x : np.zeros(1, self.input_shape)}
+
+        with tf.Session(graph=graph) as sess:
+            writer = tf.summary.FileWriter("output", sess.graph)
+            # sess.run(self._prediction, feed_dict)
+            writer.close()
+        print("Done")
