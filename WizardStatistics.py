@@ -18,7 +18,7 @@ class WizardStatistic(object):
         self.players = []
         # init agents
         for _ in range(num_agents):
-            self.players.append(RLAgent())
+            self.players.append(RLAgent(trick_prediction=False))
 
         # init average random players
         for _ in range(num_agents, num_players):
@@ -39,20 +39,22 @@ class WizardStatistic(object):
         # y-Achse: Prozent gewonnene Spiele
         # Average Random Player: grau
         # RL Agent: green
-        stat_num_games = np.arange(1, self.num_games + 1, 1)
+        stat_num_games = np.arange(1000, self.num_games + 1, 1)
         fig, ax = plt.subplots()
+        if self.num_games < 1000:
+            print("Cannot print statistic, not enough rounds played")
+            return
 
         for i in range(len(self.players)):
             won_games = self.wins[:, i]
 
-            won_stat = np.zeros(self.num_games, dtype=float)
+            won_stat = np.zeros(self.num_games - 1000, dtype=float)
 
-            for game in range(self.num_games):
-                won_stat[game] = np.sum(won_games[:game]) / (game + 1)
+            for game in range(1000, self.num_games):
+                won_stat[game] = np.sum(won_games[game-1000:game]) / 1000
 
             ax.plot(stat_num_games, won_stat, color=self.plot_colors[i], label=self.get_playertype(self.players[i]))
 
-        #plt.xticks(stat_num_games)
         ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games')
         ax.legend()
         plt.show()
@@ -67,7 +69,7 @@ class WizardStatistic(object):
 
 
 if __name__ == "__main__":
-    stat = WizardStatistic(num_games=1000)
+    stat = WizardStatistic(num_games=100)
     stat.play_games()
     stat.plot_game_statistics()
 

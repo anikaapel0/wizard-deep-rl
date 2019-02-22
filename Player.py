@@ -1,4 +1,4 @@
-from random import shuffle, randrange, choice
+from random import shuffle, randrange, choice, random
 from collections import Counter
 import Card
 
@@ -35,11 +35,14 @@ class Player(object):
     def play_card(self, trump, first, played, players, played_in_game):
         raise NotImplementedError("This needs to be implemented by your Player class")
 
-    def get_prediction(self, trump, predictions, players):
+    def get_prediction(self, trump, predictions, players, restriction=None):
         raise NotImplementedError("This needs to be implemented by your Player class")
 
     def get_trump_color(self):
         raise NotImplementedError("This needs to be implemented by your Player class")
+
+    def trick_ended(self, trump):
+        return
 
     def give_reward(self, reward):
         self.reward = reward
@@ -73,11 +76,17 @@ class RandomPlayer(Player):
         # print("Playing card {} from {}".format(card_to_play, self.hand))
         return card_to_play
 
-    def get_prediction(self, trump, predictions, players):
+    def get_prediction(self, trump, predictions, players, restriction=None):
         """Randomly return any number of wins between 0 and total number
          of games.
          """
         prediction = randrange(len(self.hand))
+        if prediction == restriction:
+            if random():
+                prediction += 1
+            else:
+                prediction -= 1
+
         self.prediction = prediction
         return prediction
 
@@ -94,8 +103,13 @@ class AverageRandomPlayer(RandomPlayer):
     def __init__(self):
         super().__init__()
 
-    def get_prediction(self, trump, predictions, players):
+    def get_prediction(self, trump, predictions, players, restriction=None):
         prediction = len(self.hand) // len(predictions)
+        if prediction == restriction:
+            if random():
+                prediction += 1
+            else:
+                prediction -= 1
         self.prediction = prediction
         return prediction
 

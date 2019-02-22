@@ -3,7 +3,8 @@ from random import shuffle
 
 class Card(object):
 
-    colors = ("White", "Green", "Red", "Blue", "Yellow")
+    colors = ["White", "Green", "Red", "Blue", "Yellow"]
+    color_order = ["Green", "Red", "Blue", "Yellow"]
     DIFFERENT_CARDS = 54
 
     def __init__(self, color, value):
@@ -23,7 +24,20 @@ class Card(object):
         return str(self)
 
     def __int__(self):
-        # Used for feature vector translation.
+        return self.card_to_int_trump(self.color_order)
+        # # Used for feature vector translation.
+        # if self.color == "White":
+        #     if self.value == 0:
+        #         # N is 52
+        #         return 52
+        #     else:
+        #         # Z is 53
+        #         return 53
+        # # The rest is between 0-51 inclusive.
+        # return (Card.colors.index(self.color)-1)*13 + (self.value - 1)
+
+    def card_to_int_trump(self, shuffled_colors):
+        # used for feature vector translation with trump order
         if self.color == "White":
             if self.value == 0:
                 # N is 52
@@ -31,8 +45,9 @@ class Card(object):
             else:
                 # Z is 53
                 return 53
-        # The rest is between 0-51 inclusive.
-        return (Card.colors.index(self.color)-1)*13 + (self.value - 1)
+        # The rest is between 0-51 inclusive
+        index = shuffled_colors.index(self.color)
+        return index*13 + (self.value - 1)
 
     @staticmethod
     def int_to_card(x):

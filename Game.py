@@ -47,10 +47,13 @@ class Game(object):
             self.first_player = winner
             # Game keeps track of the played cards.
             self.played_cards += trick_cards
+
             # Update wins
             for i in range(len(self.players)):
                 self.players[i].wins = wins[i]
-            #print("{} won the game!".format(winner))
+                # inform player that trick has ended
+                self.players[i].trick_ended(self.trump_card)
+            # print("{} won the game!".format(winner))
         return self.get_scores(wins)
 
     def distribute_cards(self):
@@ -58,6 +61,7 @@ class Game(object):
         for _ in range(self.game_num):
             for player in self.players:
                 player.hand += self.deck.draw()
+
         # Flip the next card, that is the trump card.
         if self.deck.is_empty():
             return [None]
@@ -66,14 +70,21 @@ class Game(object):
 
     def ask_for_predictions(self):
         num_players = len(self.players)
+        all_predictions = 0
         for i in range(num_players):
             # Start with the first player and ascend, then reset at 0.
             current_player_index = (self.first_player + i) % num_players
             player = self.players[current_player_index]
+            restriction = None
+            # calculate restriction for last player
+            if i == num_players - 1:
+                restriction = self.game_num - all_predictions
             prediction = player.get_prediction(self.trump_card,
                                                self.predictions,
-                                               self.players)
+                                               self.players,
+                                               restriction)
             self.predictions[current_player_index] = prediction
+            all_predictions += prediction
             """print("Player {} predicted {}".format(current_player_index,
                                                   prediction))"""
 

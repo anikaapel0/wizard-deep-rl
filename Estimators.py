@@ -77,8 +77,8 @@ class DQNEstimator(Estimator):
         self._target = self.dqn_network(input_size=self._x, scope_name="Q_Target")
 
         with tf.variable_scope("Learning"):
-            loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer().minimize(loss)
+            self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
+            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
         self._var_init = tf.global_variables_initializer()
 
@@ -95,6 +95,7 @@ class DQNEstimator(Estimator):
             s_prime: np.array state after taking action a
 
         """
+
         # Circular buffer for memory.
         self.memory[self.t % len(self.memory)] = (s, a, r, s_prime)
         self.t += 1
@@ -133,18 +134,12 @@ class DQNEstimator(Estimator):
             self.train_model(x, y)
 
     def train_model(self, batch_x, batch_y):
-        # train model
-        num_batches = batch_x.shape[0]
-        size = batch_x.shape[1]
-        size_y = batch_y.shape[1]
-
-        for i in range(num_batches):
-            # train network
-            self._session.run([self._optimizer, self._loss],
-                              feed_dict={
-                                  self._x: np.resize(batch_x[i], (1, size)),
-                                  self._y: np.resize(batch_y[i], (1, size_y))
-                              })
+        feed_dict = {
+            self._x: batch_x,
+            self._y: batch_y
+        }
+        # train network
+        self._session.run([self._optimizer, self._loss], feed_dict)
 
     def predict(self, s):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
@@ -155,8 +150,6 @@ class DQNEstimator(Estimator):
         return self._session.run(self._target, feed_dict)
 
     def update_target(self):
-        print("TODO")  # TODO
-
         q_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="Q_Primary")
         q_target_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="Q_Target")
 
@@ -164,9 +157,6 @@ class DQNEstimator(Estimator):
 
         # hard update
         self._session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
-
-        # self.weight_target = self.weights
-        # self.biases_target = self.biases
 
     def save(self, name="model-dqn"):
         print("Saving {}".format(name))
@@ -203,10 +193,6 @@ class DQNEstimator(Estimator):
 
     def print_graph(self):
         graph = tf.get_default_graph()
-
-        print(graph.get_operations())
-
-        # feed_dict = {self._x : np.zeros(1, self.input_shape)}
 
         with tf.Session(graph=graph) as sess:
             writer = tf.summary.FileWriter("output", sess.graph)

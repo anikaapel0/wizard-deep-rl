@@ -1,4 +1,6 @@
 import Card
+import random
+from copy import deepcopy
 
 
 class Featurizer(object):
@@ -7,6 +9,10 @@ class Featurizer(object):
 
     def __init__(self, count_cards=True):
         self.count_cards = count_cards
+
+    def transform(self, player, trump):
+        hand_arr = self.cards_to_arr_trump_first(player.hand, trump)
+        return hand_arr
 
     def transform(self, player, trump, first, played, players, played_in_game):
         """
@@ -51,9 +57,26 @@ class Featurizer(object):
         Returns:
             arr: array (len==54) indicating the count of each card.
         """
-        arr = [0]*Card.Card.DIFFERENT_CARDS
+        arr = [0] * Card.Card.DIFFERENT_CARDS
         for card in cards:
             arr[int(card)] += 1
+        return arr
+
+    @staticmethod
+    def cards_to_arr_trump_first(cards, trump):
+        arr = [0] * Card.Card.DIFFERENT_CARDS
+
+        colors = deepcopy(Card.Card.color_order)
+        if trump.color == "White":
+            random.shuffle(colors)
+            shuffled_colors = colors
+        else:
+            colors.remove(trump.color)
+            random.shuffle(colors)
+            shuffled_colors = [trump.color] + colors
+
+        for card in cards:
+            arr[card.card_to_int_trump(shuffled_colors)] += 1
         return arr
 
     @staticmethod
@@ -69,7 +92,7 @@ class Featurizer(object):
             arr: one-hot encoding array of the color
 
         """
-        bin_arr = [0]*len(Card.Card.colors)
+        bin_arr = [0] * len(Card.Card.colors)
         if card is None:
             return bin_arr
         else:
@@ -113,6 +136,3 @@ class Featurizer(object):
         count += 126
 
         return count
-
-
-

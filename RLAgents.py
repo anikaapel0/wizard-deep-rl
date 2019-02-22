@@ -1,14 +1,16 @@
 import Estimators
 import Policies
 import Featurizers
+from TrickPrediction import TrickPrediction
 from Player import Player, RandomPlayer, AverageRandomPlayer
+from copy import deepcopy
 import numpy as np
 
 
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=False):
         super().__init__()
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
@@ -22,10 +24,34 @@ class RLAgent(AverageRandomPlayer):
             self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=0.1)
         else:
             self.policy = policy
+        if trick_prediction:
+            self.trick_prediction = TrickPrediction()
+        else:
+            self.trick_prediction = None
 
         self.old_state = None
         self.old_score = 0
         self.old_action = None
+        self.whole_hand = None
+
+    def get_prediction(self, trump, predictions, players, restriction=None):
+        # store whole hand for update of trick prediction
+        self.whole_hand = deepcopy(self.hand)
+
+        if self.trick_prediction is None:
+            return super(RLAgent, self).get_prediction(trump, predictions, players, restriction)
+
+        handcards = self.hand
+        s = self.featurizer.cards_to_arr_trump_first(handcards, trump)
+        prediction = self.trick_prediction.predict(s)
+
+        # get all possible predictions [0, num_cards]
+        num_cards = len(handcards)
+        playable = prediction[:num_cards+1]
+        # choose prediction as output with highest value
+        tricks_predicted = np.max(playable)
+        self.prediction = tricks_predicted
+        return tricks_predicted
 
     def play_card(self, trump, first, played, players, played_in_game):
         """Plays a card according to the estimator Q function and learns
@@ -102,3 +128,8 @@ class RLAgent(AverageRandomPlayer):
                                "action.\nHand: {}\nAction: {}".format(self.hand,
                                                                       a))
         return card_to_return
+
+    def trick_ended(self, trump):
+        if self.trick_prediction is not None:
+            arr_cards = self.featurizer.cards_to_arr_trump_first(self.whole_hand, trump)
+            self.trick_prediction.update(arr_cards, self.prediction, self.wins)
