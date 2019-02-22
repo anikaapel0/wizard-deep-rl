@@ -6,9 +6,9 @@ import random
 class TrickPrediction(object):
     n_hidden_1 = 256
 
-    def __init__(self, memory=100, batch_size=50, gamma=0.95):
+    def __init__(self, input_shape = 54, memory=100, batch_size=50, gamma=0.95):
         tf.reset_default_graph()
-        self.input_shape = 54
+        self.input_shape = input_shape
         self.output_shape = 21  # up to 20 tricks in a round is possible + zero tricks
         self.gamma = gamma
         self.memory = [([], 0, 0, [])] * memory

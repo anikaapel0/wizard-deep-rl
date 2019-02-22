@@ -17,7 +17,7 @@ class Game(object):
         self.played_cards = []
 
     def play(self):
-        #print("Playing game #{}".format(self.game_num))
+        # print("Playing game #{}".format(self.game_num))
         # New game, new deck. No played cards.
         self.played_cards = []
         self.trump_card = self.distribute_cards()[0]

@@ -12,6 +12,7 @@ bin/
 gen/
 out/
 output/
+summaries/
 __pycache__/
 
 # Local configuration file (sdk path, etc)

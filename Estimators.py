@@ -52,8 +52,11 @@ class DQNEstimator(Estimator):
         self._x = None
         self._y = None
         self._target = None
+        self.counter_train = 0
+        self._merge = None
         self._var_init = None
         self._session = None
+        self._sum_writer = None
         self._init_model()
         self.print_graph()
 
@@ -80,10 +83,14 @@ class DQNEstimator(Estimator):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
+        with tf.variable_scope("Summary"):
+            self._merge = tf.summary.merge_all()
+        self._session = tf.Session()
+        self._sum_writer = tf.summary.FileWriter("summaries/train", self._session.graph)
         self._var_init = tf.global_variables_initializer()
 
-        self._session = tf.Session()
         self._session.run(self._var_init)
+
 
     def update(self, s, a, r, s_prime):
         """
@@ -134,12 +141,17 @@ class DQNEstimator(Estimator):
             self.train_model(x, y)
 
     def train_model(self, batch_x, batch_y):
+        self.counter_train += 1
+
         feed_dict = {
             self._x: batch_x,
             self._y: batch_y
         }
+        merge = tf.summary.merge_all()
         # train network
-        self._session.run([self._optimizer, self._loss], feed_dict)
+        summary, _, loss = self._session.run([merge, self._optimizer, self._loss], feed_dict)
+
+        self._sum_writer.add_summary(summary, self.counter_train)
 
     def predict(self, s):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
