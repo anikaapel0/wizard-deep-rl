@@ -1,19 +1,20 @@
 from Card import Deck, Card
 from Trick import Trick
+from copy import deepcopy
 
 
 class Game(object):
     """Game object, plays a number of tricks and awards points depending
     on the outcome of the tricks and the predictions."""
 
-    def __init__(self, game_num, players):
+    def __init__(self, game_num, players, random_start):
         self.game_num = game_num
         self.players = players
         self.deck = Deck()
         self.predictions = [-1]*len(players)
         self.trump_card = None
         # -1 adjusts for 1-index in game numbers and 0-index in players
-        self.first_player = (game_num-1) % len(players)
+        self.first_player = (game_num + random_start-1) % len(players)
         self.played_cards = []
 
     def play(self):
@@ -61,6 +62,10 @@ class Game(object):
         for _ in range(self.game_num):
             for player in self.players:
                 player.hand += self.deck.draw()
+
+        # store players hand cards for later statistics
+        for player in self.players:
+            player.whole_hand = deepcopy(player.hand)
 
         # Flip the next card, that is the trump card.
         if self.deck.is_empty():

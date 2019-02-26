@@ -35,23 +35,21 @@ class RLAgent(AverageRandomPlayer):
         self.whole_hand = None
 
     def get_prediction(self, trump, predictions, players, restriction=None):
-        # store whole hand for update of trick prediction
-        self.whole_hand = deepcopy(self.hand)
-
         if self.trick_prediction is None:
             return super(RLAgent, self).get_prediction(trump, predictions, players, restriction)
 
-        handcards = self.hand
-        s = self.featurizer.cards_to_arr_trump_first(handcards, trump)
+        s = self.featurizer.transform_handcards(self, trump)
         prediction = self.trick_prediction.predict(s)
 
-        # get all possible predictions [0, num_cards]
-        num_cards = len(handcards)
-        playable = prediction[:num_cards+1]
-        # choose prediction as output with highest value
-        tricks_predicted = np.max(playable)
-        self.prediction = tricks_predicted
-        return tricks_predicted
+        # round prediction
+        final_pred = int(round(prediction[0, 0]))
+        if restriction is not None and final_pred == restriction:
+            if prediction < final_pred:
+                final_pred -= 1
+            else:
+                final_pred += 1
+
+        return final_pred
 
     def play_card(self, trump, first, played, players, played_in_game):
         """Plays a card according to the estimator Q function and learns

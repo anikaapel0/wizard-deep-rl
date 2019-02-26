@@ -10,8 +10,8 @@ class Featurizer(object):
     def __init__(self, count_cards=True):
         self.count_cards = count_cards
 
-    def transform(self, player, trump):
-        hand_arr = self.cards_to_arr_trump_first(player.hand, trump)
+    def transform_handcards(self, player, trump):
+        hand_arr = self.cards_to_arr_trump_first(player.whole_hand, trump)
         return hand_arr
 
     def transform(self, player, trump, first, played, players, played_in_game):

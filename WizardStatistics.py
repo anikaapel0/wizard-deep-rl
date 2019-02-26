@@ -10,19 +10,18 @@ class WizardStatistic(object):
 
     plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 
-    def __init__(self, num_games=20, num_players=4, num_agents=1):
+    def __init__(self, num_games=20, num_players=4, num_agents=1, trick_prediction=False):
         self.num_games = num_games
         self.num_players = num_players
         self.num_agents = num_agents
         self.wins = np.zeros((num_games, num_players))
         self.players = []
-        # init agents
-        for _ in range(num_agents):
-            self.players.append(RLAgent(trick_prediction=False))
-
         # init average random players
         for _ in range(num_agents, num_players):
             self.players.append(AverageRandomPlayer())
+        # init agents
+        for _ in range(num_agents):
+            self.players.append(RLAgent(trick_prediction=trick_prediction))
 
     def play_games(self):
         for i in range(self.num_games):
@@ -37,21 +36,19 @@ class WizardStatistic(object):
         # plot:
         # x-Achse: gespielte Runden
         # y-Achse: Prozent gewonnene Spiele
-        # Average Random Player: grau
-        # RL Agent: green
-        stat_num_games = np.arange(0, self.num_games - 1000, 1)
+        stat_num_games = np.arange(0, self.num_games, 1)
         fig, ax = plt.subplots()
-        if self.num_games < 1000:
-            print("Cannot print statistic, not enough rounds played")
-            return
 
         for i in range(len(self.players)):
             won_games = self.wins[:, i]
 
-            won_stat = np.zeros(self.num_games - 1000, dtype=float)
+            won_stat = np.zeros(self.num_games, dtype=float)
 
-            for game in range(self.num_games - 1000):
-                won_stat[game] = np.sum(won_games[game:game+1000]) / 1000
+            for game in range(self.num_games):
+                if game < 1000:
+                    won_stat[game] = np.sum(won_games[:game]) / (game + 1)
+                else:
+                    won_stat[game] = np.sum(won_games[game-1000:game]) / 1000
 
             ax.plot(stat_num_games, won_stat, color=self.plot_colors[i], label=self.get_playertype(self.players[i]))
 
@@ -69,7 +66,7 @@ class WizardStatistic(object):
 
 
 if __name__ == "__main__":
-    stat = WizardStatistic(num_games=1100)
+    stat = WizardStatistic(num_games=30, num_agents=1, trick_prediction=True)
     stat.play_games()
     stat.plot_game_statistics()
 

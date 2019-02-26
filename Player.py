@@ -11,6 +11,7 @@ class Player(object):
         self.reward = 0
         self.wins = 0
         self.prediction = -1
+        self.whole_hand = None
 
     def get_playable_cards(self, first):
         playable_cards = []

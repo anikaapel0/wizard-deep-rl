@@ -36,7 +36,7 @@ class DQNEstimator(Estimator):
     n_hidden_3 = 1024
 
     def __init__(self, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=5000):
+                 target_update=5000, save_update=100000):
         tf.reset_default_graph()
         self.input_shape = input_shape
         self.output_shape = output_shape
@@ -45,6 +45,7 @@ class DQNEstimator(Estimator):
         self.batch_size = batch_size
         self.target_update = target_update
         self.update_rate = max(1, batch_size // 8)
+        self.save_update = save_update
         self.t = 0
         self._prediction = None
         self._optimizer = None
@@ -53,19 +54,22 @@ class DQNEstimator(Estimator):
         self._y = None
         self._target = None
         self.counter_train = 0
-        self._merge = None
         self._var_init = None
         self._session = None
         self._sum_writer = None
+        self._merged = None
         self._init_model()
         self.print_graph()
 
     def dqn_network(self, input_size, scope_name, act=tf.nn.relu):
 
         with tf.variable_scope(scope_name):
-            hidden1 = tf.layers.dense(input_size, self.n_hidden_1, activation=act, name=scope_name + "_1")
-            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, activation=act, name=scope_name + "_2")
-            hidden3 = tf.layers.dense(hidden2, self.n_hidden_3, activation=act, name=scope_name + "_3")
+            hidden1 = tf.layers.dense(input_size, self.n_hidden_1, activation=act, name=scope_name + "_1",
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
+            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, activation=act, name=scope_name + "_2",
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
+            hidden3 = tf.layers.dense(hidden2, self.n_hidden_3, activation=act, name=scope_name + "_3",
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
 
             prediction = tf.layers.dense(hidden3, self.output_shape)
 
@@ -83,14 +87,14 @@ class DQNEstimator(Estimator):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
-        with tf.variable_scope("Summary"):
-            self._merge = tf.summary.merge_all()
+        tf.summary.scalar('loss_trick-prediction', self._loss)
+
+        self._merged = tf.summary.merge_all()
         self._session = tf.Session()
-        self._sum_writer = tf.summary.FileWriter("summaries/train", self._session.graph)
+        self._sum_writer = tf.summary.FileWriter("log/dqn/train-summary", self._session.graph)
         self._var_init = tf.global_variables_initializer()
 
         self._session.run(self._var_init)
-
 
     def update(self, s, a, r, s_prime):
         """
@@ -140,6 +144,10 @@ class DQNEstimator(Estimator):
 
             self.train_model(x, y)
 
+        # save model after a given number of steps (save_update)
+        # if self.t % self.save_update == 0:
+        #    self.save('dqn_ckpt_' + self.t)
+
     def train_model(self, batch_x, batch_y):
         self.counter_train += 1
 
@@ -147,9 +155,8 @@ class DQNEstimator(Estimator):
             self._x: batch_x,
             self._y: batch_y
         }
-        merge = tf.summary.merge_all()
         # train network
-        summary, _, loss = self._session.run([merge, self._optimizer, self._loss], feed_dict)
+        summary, _, loss = self._session.run([self._merged, self._optimizer, self._loss], feed_dict)
 
         self._sum_writer.add_summary(summary, self.counter_train)
 
@@ -207,7 +214,7 @@ class DQNEstimator(Estimator):
         graph = tf.get_default_graph()
 
         with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("output", sess.graph)
+            writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
             # sess.run(self._prediction, feed_dict)
             writer.close()
-        print("Done")
+        print("Done printing graph")

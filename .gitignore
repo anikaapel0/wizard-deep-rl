@@ -8,11 +8,7 @@
 
 
 # Generated files
-bin/
-gen/
-out/
-output/
-summaries/
+log/
 __pycache__/
 
 # Local configuration file (sdk path, etc)
