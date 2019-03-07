@@ -55,6 +55,9 @@ class Player(object):
     def reset_score(self):
         self.score = 0
 
+    def close(self):
+        return
+
 
 class RandomPlayer(Player):
     """A completely random agent, it always chooses all

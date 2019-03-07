@@ -36,19 +36,23 @@ class WizardStatistic(object):
         # plot:
         # x-Achse: gespielte Runden
         # y-Achse: Prozent gewonnene Spiele
-        stat_num_games = np.arange(0, self.num_games, 1)
+        if self.num_games > 50:
+            start = 50
+        else:
+            start = 0
+        stat_num_games = np.arange(start, self.num_games, 1)
         fig, ax = plt.subplots()
 
         for i in range(len(self.players)):
             won_games = self.wins[:, i]
 
-            won_stat = np.zeros(self.num_games, dtype=float)
+            won_stat = np.zeros(self.num_games - start, dtype=float)
 
-            for game in range(self.num_games):
+            for game in range(start, self.num_games):
                 if game < 1000:
-                    won_stat[game] = np.sum(won_games[:game]) / (game + 1)
+                    won_stat[game - start] = np.sum(won_games[:game]) / (game + 1)
                 else:
-                    won_stat[game] = np.sum(won_games[game-1000:game]) / 1000
+                    won_stat[game - start] = np.sum(won_games[game-1000:game]) / 1000
 
             ax.plot(stat_num_games, won_stat, color=self.plot_colors[i], label=self.get_playertype(self.players[i]))
 
@@ -64,9 +68,17 @@ class WizardStatistic(object):
         if isinstance(player, RandomPlayer):
             return "RandomPlayer"
 
+    def close(self):
+        for player in self.players:
+            player.close()
+
 
 if __name__ == "__main__":
-    stat = WizardStatistic(num_games=30, num_agents=1, trick_prediction=True)
-    stat.play_games()
-    stat.plot_game_statistics()
+    try:
+        stat = WizardStatistic(num_games=5000, num_agents=1, trick_prediction=False)
+        stat.play_games()
+        stat.plot_game_statistics()
+    finally:
+        if stat is not None:
+            stat.close()
 

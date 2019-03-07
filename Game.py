@@ -49,12 +49,14 @@ class Game(object):
             # Game keeps track of the played cards.
             self.played_cards += trick_cards
 
-            # Update wins
-            for i in range(len(self.players)):
-                self.players[i].wins = wins[i]
-                # inform player that trick has ended
-                self.players[i].trick_ended(self.trump_card)
             # print("{} won the game!".format(winner))
+
+        # Update wins
+        for i in range(len(self.players)):
+            self.players[i].wins = wins[i]
+            # inform player that trick has ended
+            self.players[i].trick_ended(self.trump_card)
+
         return self.get_scores(wins)
 
     def distribute_cards(self):

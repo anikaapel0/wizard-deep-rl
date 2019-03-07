@@ -215,6 +215,8 @@ class DQNEstimator(Estimator):
 
         with tf.Session(graph=graph) as sess:
             writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
-            # sess.run(self._prediction, feed_dict)
             writer.close()
         print("Done printing graph")
+
+    def close(self):
+        self._session.close()

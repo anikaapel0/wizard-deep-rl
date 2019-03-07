@@ -2,15 +2,14 @@ import Estimators
 import Policies
 import Featurizers
 from TrickPrediction import TrickPrediction
-from Player import Player, RandomPlayer, AverageRandomPlayer
-from copy import deepcopy
+from Player import AverageRandomPlayer
 import numpy as np
 
 
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=False):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=False, training_rate=5000):
         super().__init__()
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
@@ -33,6 +32,7 @@ class RLAgent(AverageRandomPlayer):
         self.old_score = 0
         self.old_action = None
         self.whole_hand = None
+        self.training_rate = training_rate
 
     def get_prediction(self, trump, predictions, players, restriction=None):
         if self.trick_prediction is None:
@@ -43,6 +43,7 @@ class RLAgent(AverageRandomPlayer):
 
         # round prediction
         final_pred = int(round(prediction[0, 0]))
+        print("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
         if restriction is not None and final_pred == restriction:
             if prediction < final_pred:
                 final_pred -= 1
@@ -131,3 +132,11 @@ class RLAgent(AverageRandomPlayer):
         if self.trick_prediction is not None:
             arr_cards = self.featurizer.cards_to_arr_trump_first(self.whole_hand, trump)
             self.trick_prediction.update(arr_cards, self.prediction, self.wins)
+
+
+
+    def close(self):
+        # close tensorflow sessions
+        self.estimator.close()
+        if self.trick_prediction is not None:
+            self.trick_prediction.close()
