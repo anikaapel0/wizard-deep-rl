@@ -9,7 +9,7 @@ import numpy as np
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=False, training_rate=5000):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None):
         super().__init__()
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
@@ -23,26 +23,26 @@ class RLAgent(AverageRandomPlayer):
             self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=0.1)
         else:
             self.policy = policy
-        if trick_prediction:
-            self.trick_prediction = TrickPrediction()
-        else:
+        if trick_prediction is None:
             self.trick_prediction = None
+        else:
+            self.trick_prediction = trick_prediction
 
         self.old_state = None
         self.old_score = 0
         self.old_action = None
         self.whole_hand = None
-        self.training_rate = training_rate
 
     def get_prediction(self, trump, predictions, players, restriction=None):
         if self.trick_prediction is None:
             return super(RLAgent, self).get_prediction(trump, predictions, players, restriction)
 
         s = self.featurizer.transform_handcards(self, trump)
-        prediction = self.trick_prediction.predict(s)
+        average = len(self.hand) // len(predictions)
+        prediction = self.trick_prediction.predict(s, average)
 
         # round prediction
-        final_pred = int(round(prediction[0, 0]))
+        final_pred = int(round(prediction))
         print("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
         if restriction is not None and final_pred == restriction:
             if prediction < final_pred:

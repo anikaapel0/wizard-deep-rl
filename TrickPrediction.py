@@ -9,7 +9,7 @@ from Wizard import Wizard
 class TrickPrediction(object):
     n_hidden_1 = 40
 
-    def __init__(self, input_shape=54, memory=100000, batch_size=1024, training_rounds=2000):
+    def __init__(self, input_shape=54, memory=10000, batch_size=1024, training_rounds=200):
         tf.reset_default_graph()
         self.input_shape = input_shape
         self.output_shape = 1
@@ -72,7 +72,9 @@ class TrickPrediction(object):
 
         # If memory is full, we can start training
         if self.t % len(self.memory) == 0:
-            for _ in range(100):
+            print("-----------TRICK-PREDICTION TRAINED-----------")
+            self._trained = True
+            for _ in range(50):
                 # Randomly sample from experience
                 minibatch = random.sample(self.memory, self.batch_size)
                 # Initialize x and y for the neural network
@@ -154,11 +156,13 @@ class TrickPrediction(object):
         print("Initial Training finished")
         self._trained = True
 
-    def predict(self, s):
+    def predict(self, s, average):
         if not self._trained:
-            self.init_training()
+            # self.init_training()
+            return average
+
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
-        return self._session.run(self._prediction, feed_dict)
+        return self._session.run(self._prediction, feed_dict)[0, 0]
 
     def close(self):
         if self._session is not None:
