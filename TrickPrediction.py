@@ -9,8 +9,7 @@ from Wizard import Wizard
 class TrickPrediction(object):
     n_hidden_1 = 40
 
-    def __init__(self, input_shape=54, memory=10000, batch_size=1024, training_rounds=200):
-        tf.reset_default_graph()
+    def __init__(self, session, input_shape=54, memory=5000, batch_size=512, training_rounds=200):
         self.input_shape = input_shape
         self.output_shape = 1
         self.memory = [([], 0, 0)] * memory
@@ -18,40 +17,40 @@ class TrickPrediction(object):
         self.update_rate = max(1, batch_size // 8)
         self.t = 0
         self.t_train = 0
-        self._prediction = None
-        self._optimizer = None
-        self._loss = None
-        self._x = None
-        self._y = None
+        self._trick_prediction = None
+        self._trick_optimizer = None
+        self._trick_loss = None
+        self._features = None
+        self._tricks = None
         self._var_init = None
-        self._session = None
+        self._session = session
         self._trained = False
-        self._merged = None
+        self._merged2 = None
         self._train_writer = None
         self.training_rounds = training_rounds
         self._init_model()
 
     def _init_model(self):
-        with tf.variable_scope("Input_Data"):
-            self._x = tf.placeholder("float", [None, self.input_shape], name="handcards")
-            self._y = tf.placeholder("float", [None, self.output_shape], name="num_tricks")
+        with tf.variable_scope("Input_Data_TrickPrediction"):
+            self._features = tf.placeholder("float", [None, self.input_shape], name="handcards")
+            self._tricks = tf.placeholder("float", [None, self.output_shape], name="num_tricks")
 
         with tf.variable_scope("Trick_Prediction_Network"):
-            hidden1 = tf.layers.dense(self._x, self.n_hidden_1, activation=tf.nn.relu, name="Hidden_1")
-            self._prediction = tf.layers.dense(hidden1, self.output_shape, use_bias=False)
+            hidden1_trick = tf.layers.dense(self._features, self.n_hidden_1, activation=tf.nn.relu, name="Trick_Hidden_1")
+            self._trick_prediction = tf.layers.dense(hidden1_trick, self.output_shape, use_bias=False)
 
-        with tf.variable_scope("Learning"):
-            self._loss = tf.losses.mean_squared_error(self._y*10, self._prediction*10)
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._loss)
+        with tf.variable_scope("Learning_TrickPrediction"):
+            self._trick_loss = tf.losses.mean_squared_error(self._tricks*10, self._trick_prediction*10)
+            self._trick_optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._trick_loss)
 
-        tf.summary.scalar('loss_trick-prediction', self._loss)
+        tf.summary.scalar('loss_trick-prediction', self._trick_loss)
 
-        self._merged = tf.summary.merge_all()
+        self._merged2 = tf.summary.merge_all()
         self._var_init = tf.global_variables_initializer()
 
-        self._session = tf.Session()
         self._train_writer = tf.summary.FileWriter("log/trick-prediction/train-summary", self._session.graph)
-        self._session.run(self._var_init)
+        # self._session.run(self._var_init)
+        # self._session.run(tf.report_uninitialized_variables())
         self.print_graph()
 
     def update(self, cards, num_forecast, num_tricks):
@@ -94,13 +93,13 @@ class TrickPrediction(object):
     def train_model(self, batch_x, batch_y):
         self.t_train += 1
         feed_dict = {
-            self._x: batch_x,
-            self._y: batch_y
+            self._features: batch_x,
+            self._tricks: batch_y
         }
         # train network
-        summary, opt, loss = self._session.run([self._merged, self._optimizer, self._loss], feed_dict)
+        opt, loss = self._session.run([self._trick_optimizer, self._trick_loss], feed_dict)
         print("Epoch {} - Loss: {}".format(self.t_train, loss))
-        self._train_writer.add_summary(summary, self.t_train)
+        # self._train_writer.add_summary(summary, self.t_train)
 
     def collect_training_data(self, players):
         x = None
@@ -129,19 +128,6 @@ class TrickPrediction(object):
 
         players = [AverageRandomPlayer() for _ in range(num_players)]
 
-        # for i in range(self.training_rounds):
-        #     wizard = Wizard(players=players, track_tricks=True)
-        #     wizard.play()
-        #
-        #     x, y = wizard.get_history()
-        #
-        #     for j in range(x.shape[0]):
-        #         self.update(x[j], None, y[j])
-        #
-        #     # temporärer Tracker
-        #     if i % 100 == 0:
-        #         print("Trick Prediction Initializer: Round {} finished".format(i))
-
         x, y = self.collect_training_data(players)
 
         batch_size = 1024
@@ -161,16 +147,17 @@ class TrickPrediction(object):
             # self.init_training()
             return average
 
-        feed_dict = {self._x: np.array(s)[np.newaxis, :]}
-        return self._session.run(self._prediction, feed_dict)[0, 0]
+        feed_dict = {self._features: np.array(s)[np.newaxis, :]}
+        return self._session.run(self._trick_prediction, feed_dict)[0, 0]
 
     def close(self):
         if self._session is not None:
             self._session.close()
 
     def print_graph(self):
-        graph = tf.get_default_graph()
+        print("Printing graph is deactivated")
+        # graph = tf.get_default_graph()
 
-        with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/trick-prediction/graph", sess.graph)
-            writer.close()
+        # with tf.Session(graph=graph) as sess:
+        #    writer = tf.summary.FileWriter("log/trick-prediction/graph", sess.graph)
+        #    writer.close()

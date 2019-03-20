@@ -35,9 +35,8 @@ class DQNEstimator(Estimator):
     n_hidden_2 = 512
     n_hidden_3 = 1024
 
-    def __init__(self, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=5000, save_update=100000):
-        tf.reset_default_graph()
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=10000, batch_size=1024,
+                 gamma=0.95, target_update=5000, save_update=100000):
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.gamma = gamma
@@ -55,7 +54,7 @@ class DQNEstimator(Estimator):
         self._target = None
         self.counter_train = 0
         self._var_init = None
-        self._session = None
+        self._session = session
         self._sum_writer = None
         self._merged = None
         self._init_model()
@@ -76,25 +75,24 @@ class DQNEstimator(Estimator):
         return prediction
 
     def _init_model(self):
-        with tf.variable_scope("Input_Data"):
+        with tf.variable_scope("Input_Data_CardPrediction"):
             self._x = tf.placeholder("float", [None, self.input_shape], name="state")
             self._y = tf.placeholder("float", [None, self.output_shape], name="output")
 
         self._prediction = self.dqn_network(input_size=self._x, scope_name="Q_Primary")
         self._target = self.dqn_network(input_size=self._x, scope_name="Q_Target")
 
-        with tf.variable_scope("Learning"):
+        with tf.variable_scope("Learning_CardPrediction"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
-        tf.summary.scalar('loss_trick-prediction', self._loss)
+        tf.summary.scalar('loss_card-prediction', self._loss)
 
         self._merged = tf.summary.merge_all()
-        self._session = tf.Session()
         self._sum_writer = tf.summary.FileWriter("log/dqn/train-summary", self._session.graph)
         self._var_init = tf.global_variables_initializer()
 
-        self._session.run(self._var_init)
+        # self._session.run(tf.report_uninitialized_variables())
 
     def update(self, s, a, r, s_prime):
         """
@@ -211,12 +209,14 @@ class DQNEstimator(Estimator):
         return biases
 
     def print_graph(self):
-        graph = tf.get_default_graph()
+        print("Printing graph is deactivated")
 
-        with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
-            writer.close()
-        print("Done printing graph")
+        # graph = tf.get_default_graph()
+        #
+        # with tf.Session(graph=graph) as sess:
+        #     writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
+        #     writer.close()
+        # print("Done printing graph")
 
     def close(self):
         self._session.close()

@@ -7,6 +7,7 @@ from Estimators import DQNEstimator
 
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 import gc
 import psutil
@@ -93,20 +94,28 @@ class WizardStatistic(object):
 
 
 if __name__ == "__main__":
-    featurizer = Featurizer()
-    estimator = DQNEstimator(input_shape=featurizer.get_state_size())
-    trick_predictor = TrickPrediction()
-    players = [AverageRandomPlayer(), AverageRandomPlayer(),
-               RLAgent(estimator=estimator, featurizer=featurizer, trick_prediction=trick_predictor),
-               RLAgent(estimator=estimator, featurizer=featurizer)]
+    with tf.Session() as sess:
+        # tf.reset_default_graph()
+        featurizer = Featurizer()
+        estimator = DQNEstimator(session=sess, input_shape=featurizer.get_state_size())
+        trick_predictor = TrickPrediction(session=sess)
+        init = tf.global_variables_initializer()
+        print(init)
+        sess.run(tf.global_variables_initializer())
 
-    try:
+        writer = tf.summary.FileWriter("log/graph", sess.graph)
+        writer.close()
+
+        players = [AverageRandomPlayer(), AverageRandomPlayer(),
+                   RLAgent(estimator=estimator, featurizer=featurizer, trick_prediction=trick_predictor),
+                   RLAgent(estimator=estimator, featurizer=featurizer)]
+
         stat = WizardStatistic(num_games=5000, num_agents=2, players=players)
         stat.play_games()
         stat.plot_game_statistics()
-    finally:
-        if stat is not None:
-            stat.close()
+#        finally:
+#            if stat is not None:
+#                stat.close()
 
     print(psutil.cpu_percent())
     print(psutil.virtual_memory())  # physical memory usage
