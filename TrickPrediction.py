@@ -40,12 +40,12 @@ class TrickPrediction(object):
             self._trick_prediction = tf.layers.dense(hidden1_trick, self.output_shape, use_bias=False)
 
         with tf.variable_scope("Learning_TrickPrediction"):
-            self._trick_loss = tf.losses.mean_squared_error(self._tricks*10, self._trick_prediction*10)
+            self._trick_loss = tf.losses.mean_squared_error(self._tricks, self._trick_prediction)
             self._trick_optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._trick_loss)
 
         tf.summary.scalar('loss_trick-prediction', self._trick_loss)
 
-        self._merged2 = tf.summary.merge_all()
+        self._merged2 = tf.summary.merge(self._trick_loss)
         self._var_init = tf.global_variables_initializer()
 
         self._train_writer = tf.summary.FileWriter("log/trick-prediction/train-summary", self._session.graph)
@@ -97,9 +97,9 @@ class TrickPrediction(object):
             self._tricks: batch_y
         }
         # train network
-        opt, loss = self._session.run([self._trick_optimizer, self._trick_loss], feed_dict)
+        summary, opt, loss = self._session.run([self._merged2, self._trick_optimizer, self._trick_loss], feed_dict)
         print("Epoch {} - Loss: {}".format(self.t_train, loss))
-        # self._train_writer.add_summary(summary, self.t_train)
+        self._train_writer.add_summary(summary, self.t_train)
 
     def collect_training_data(self, players):
         x = None

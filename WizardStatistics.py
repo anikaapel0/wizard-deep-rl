@@ -4,11 +4,13 @@ from Wizard import Wizard
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
 from Estimators import DQNEstimator
+from PolicyEstimator import PolicyGradient
 
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
+import time
 import gc
 import psutil
 
@@ -75,7 +77,8 @@ class WizardStatistic(object):
 
         ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games')
         ax.legend()
-        plt.show()
+        # plt.show()
+        plt.savefig('log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".png")
 
     def get_playertype(self, player):
         if isinstance(player, RLAgent):
@@ -98,29 +101,33 @@ if __name__ == "__main__":
         # tf.reset_default_graph()
         featurizer = Featurizer()
         estimator = DQNEstimator(session=sess, input_shape=featurizer.get_state_size())
+        pg_estimator = PolicyGradient(session=sess, input_shape=featurizer.get_state_size())
+
         trick_predictor = TrickPrediction(session=sess)
         init = tf.global_variables_initializer()
-        print(init)
         sess.run(tf.global_variables_initializer())
 
         writer = tf.summary.FileWriter("log/graph", sess.graph)
         writer.close()
 
-        players = [AverageRandomPlayer(), AverageRandomPlayer(),
-                   RLAgent(estimator=estimator, featurizer=featurizer, trick_prediction=trick_predictor),
-                   RLAgent(estimator=estimator, featurizer=featurizer)]
+        players2 = [AverageRandomPlayer(), AverageRandomPlayer(), AverageRandomPlayer(),
+                    RLAgent(estimator=pg_estimator, featurizer=featurizer)]
 
-        stat = WizardStatistic(num_games=5000, num_agents=2, players=players)
+        # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
+
+        stat = WizardStatistic(num_games=50000, num_agents=1, players=players2)
         stat.play_games()
         stat.plot_game_statistics()
+
+
 #        finally:
 #            if stat is not None:
 #                stat.close()
 
-    print(psutil.cpu_percent())
-    print(psutil.virtual_memory())  # physical memory usage
-    gc.collect()
-    print("After collecting:")
-    print(psutil.virtual_memory())  # physical memory usage
+    # print(psutil.cpu_percent())
+    # print(psutil.virtual_memory())  # physical memory usage
+    # gc.collect()
+    # print("After collecting:")
+    # print(psutil.virtual_memory())  # physical memory usage
 
 
