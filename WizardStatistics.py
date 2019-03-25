@@ -119,6 +119,13 @@ if __name__ == "__main__":
         stat.play_games()
         stat.plot_game_statistics()
 
+        del players2
+        del featurizer
+        del estimator
+        del pg_estimator
+        del trick_predictor
+        del stat
+
 
 #        finally:
 #            if stat is not None:
