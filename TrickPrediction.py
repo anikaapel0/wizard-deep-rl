@@ -43,15 +43,12 @@ class TrickPrediction(object):
             self._trick_loss = tf.losses.mean_squared_error(self._tricks, self._trick_prediction)
             self._trick_optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._trick_loss)
 
-        tf.summary.scalar('loss_trick-prediction', self._trick_loss)
+        sum_trick_loss = tf.summary.scalar('loss_trick-prediction', self._trick_loss)
 
-        self._merged2 = tf.summary.merge(self._trick_loss)
+        self._merged2 = tf.summary.merge([sum_trick_loss])
         self._var_init = tf.global_variables_initializer()
 
         self._train_writer = tf.summary.FileWriter("log/trick-prediction/train-summary", self._session.graph)
-        # self._session.run(self._var_init)
-        # self._session.run(tf.report_uninitialized_variables())
-        self.print_graph()
 
     def update(self, cards, num_forecast, num_tricks):
         """
@@ -153,11 +150,3 @@ class TrickPrediction(object):
     def close(self):
         if self._session is not None:
             self._session.close()
-
-    def print_graph(self):
-        print("Printing graph is deactivated")
-        # graph = tf.get_default_graph()
-
-        # with tf.Session(graph=graph) as sess:
-        #    writer = tf.summary.FileWriter("log/trick-prediction/graph", sess.graph)
-        #    writer.close()

@@ -58,7 +58,6 @@ class DQNEstimator(Estimator):
         self._sum_writer = None
         self._merged = None
         self._init_model()
-        self.print_graph()
 
     def dqn_network(self, input, scope_name, act=tf.nn.relu):
 
@@ -86,13 +85,11 @@ class DQNEstimator(Estimator):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
-        tf.summary.scalar('loss_card-prediction', self._loss)
+        sum_loss = tf.summary.scalar('loss_card-prediction', self._loss)
 
-        self._merged = tf.summary.merge(self._loss)
+        self._merged = tf.summary.merge([sum_loss])
         self._sum_writer = tf.summary.FileWriter("log/dqn/train-summary", self._session.graph)
         self._var_init = tf.global_variables_initializer()
-
-        # self._session.run(tf.report_uninitialized_variables())
 
     def update(self, s, a, r, s_prime):
         """
@@ -207,16 +204,6 @@ class DQNEstimator(Estimator):
         }
 
         return biases
-
-    def print_graph(self):
-        print("Printing graph is deactivated")
-
-        # graph = tf.get_default_graph()
-        #
-        # with tf.Session(graph=graph) as sess:
-        #     writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
-        #     writer.close()
-        # print("Done printing graph")
 
     def close(self):
         self._session.close()

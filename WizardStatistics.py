@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
         # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
 
-        stat = WizardStatistic(num_games=50000, num_agents=1, players=players2)
+        stat = WizardStatistic(num_games=20000, num_agents=1, players=players2)
         stat.play_games()
         stat.plot_game_statistics()
 

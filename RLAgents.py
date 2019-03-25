@@ -85,7 +85,7 @@ class RLAgent(AverageRandomPlayer):
         probs = self.policy.get_probabilities(state)
         a = np.random.choice(len(probs), p=probs)
         card_to_play = self._remove_card_played(a)
-        self.old_state = None if terminal else state
+        self.old_state = state
         self.old_action = a
         self.give_reward(0)  # After playing a card, the reward is 0.
         # Unless it's the last card of the game, then the Game object will
