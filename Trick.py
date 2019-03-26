@@ -27,7 +27,7 @@ class Trick(object):
                                                self.trump_card,
                                                self.first_card):
                 winner = (played_card, player_index)
-            """print("First card: {}\nTrump card: {}\nWinning: {}".format(self.first_card,
+            """self.logger.info("First card: {}\nTrump card: {}\nWinning: {}".format(self.first_card,
                                                                        self.trump_card,
                                                                        winner))"""
         return winner[1], trick_cards

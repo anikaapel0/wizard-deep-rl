@@ -70,7 +70,7 @@ class TrickPrediction(object):
 
         # If memory is full, we can start training
         if self.t % len(self.memory) == 0:
-            print("-----------TRICK-PREDICTION TRAINED-----------")
+            self.logger.info("-----------TRICK-PREDICTION TRAINED-----------")
             self._trained = True
             for _ in range(50):
                 # Randomly sample from experience
@@ -97,7 +97,7 @@ class TrickPrediction(object):
         }
         # train network
         summary, opt, loss = self._session.run([self._merged2, self._trick_optimizer, self._trick_loss], feed_dict)
-        print("Epoch {} - Loss: {}".format(self.t_train, loss))
+        self.logger.info("Epoch {} - Loss: {}".format(self.t_train, loss))
         self._train_writer.add_summary(summary, self.t_train)
 
     def collect_training_data(self, players):
@@ -118,12 +118,12 @@ class TrickPrediction(object):
 
             # temporärer Tracker
             if i % 100 == 0:
-                print("Trick Prediction Initializer: Round {} finished".format(i))
+                self.logger.info("Trick Prediction Initializer: Round {} finished".format(i))
 
         return x, y
 
     def init_training(self, num_players=4, epochs=100):
-        print("Initial training for trick prediction")
+        self.logger.info("Initial training for trick prediction")
 
         players = [AverageRandomPlayer() for _ in range(num_players)]
 
@@ -138,7 +138,7 @@ class TrickPrediction(object):
 
             self.train_model(batch_x, batch_y[:, np.newaxis])
 
-        print("Initial Training finished")
+        self.logger.info("Initial Training finished")
         self._trained = True
 
     def predict(self, s, average):

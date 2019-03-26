@@ -57,8 +57,8 @@ class Wizard(object):
                     curr_idx = self.num_players * (game_num - 1) + i
                     self.history[1][curr_idx] = player.wins
                     self.history[0][curr_idx] = self.featurizer.transform_handcards(player, game.trump_card)
-            # print("Scores: {}".format(self.scores))
-        # print("Final scores: {}".format(self.scores))
+            # self.logger.info("Scores: {}".format(self.scores))
+        # self.logger.info("Final scores: {}".format(self.scores))
         for player in self.players:
             player.reset_score()
         return self.scores

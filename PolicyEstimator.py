@@ -82,7 +82,7 @@ class PolicyGradient(Estimator):
 
     def update_model(self):
         num_sets = len(self.memory)
-        print("PG-Model updated with {} Rounds played".format(num_sets))
+        self.logger.info("PG-Model updated with {} Rounds played".format(num_sets))
 
         x = np.zeros((num_sets, self.input_shape))
         y = np.zeros((num_sets, self.output_shape))

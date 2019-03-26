@@ -20,7 +20,7 @@ class Game(object):
         self.played_cards = []
 
     def play(self):
-        # print("Playing game #{}".format(self.game_num))
+        # self.logger.info("Playing game #{}".format(self.game_num))
         # New game, new deck. No played cards.
         self.played_cards = []
         self.trump_card = self.distribute_cards()[0]
@@ -35,7 +35,7 @@ class Game(object):
                 self.players[self.first_player].get_trump_color()
         # Now that each player has a hand, ask for predictions.
         self.ask_for_predictions()
-        # print("Final predictions {}".format(self.predictions))
+        # self.logger.info("Final predictions {}".format(self.predictions))
         # Reset all wins.
         wins = [0]*len(self.players)
         for i in range(len(self.players)):
@@ -51,7 +51,7 @@ class Game(object):
             # Game keeps track of the played cards.
             self.played_cards += trick_cards
 
-            # print("{} won the game!".format(winner))
+            # self.logger.info("{} won the game!".format(winner))
 
         # Update wins
         for i in range(len(self.players)):
@@ -94,7 +94,7 @@ class Game(object):
                                                restriction)
             self.predictions[current_player_index] = prediction
             all_predictions += prediction
-            """print("Player {} predicted {}".format(current_player_index,
+            """self.logger.info("Player {} predicted {}".format(current_player_index,
                                                   prediction))"""
 
     def get_scores(self, wins):

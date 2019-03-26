@@ -90,10 +90,10 @@ class EGreedyPolicy(Policy):
         # Only potential actions are the playable ones.
         # assign epsilon probabilities to every potential action.
         probs[playable_bool] += self.epsilon/sum(playable_bool)
-        # print(q_playable)
+        # self.logger.info(q_playable)
         # Find the greedy action
         greedy_a = np.argmax(q_playable)
         # Give it the highest probability.
         probs[greedy_a] += (1-self.epsilon)
-        # print(probs)
+        # self.logger.info(probs)
         return probs

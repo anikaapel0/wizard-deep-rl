@@ -176,13 +176,13 @@ class DQNEstimator(Estimator):
         self._session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
     def save(self, name="model-dqn"):
-        print("Saving {}".format(name))
+        self.logger.info("Saving {}".format(name))
         # create saver
         saver = tf.train.Saver()
 
         path = saver.save(self.session, "/tmp/{}.ckpt".format(name))
 
-        print("Saved in path {}".format(path))
+        self.logger.info("Saved in path {}".format(path))
 
     def load(self, name="model-dqn"):
         saver = tf.train.Saver()

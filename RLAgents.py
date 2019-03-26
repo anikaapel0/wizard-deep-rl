@@ -44,7 +44,7 @@ class RLAgent(AverageRandomPlayer):
 
         # round prediction
         final_pred = int(round(prediction))
-        print("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
         if restriction is not None and final_pred == restriction:
             if prediction < final_pred:
                 final_pred -= 1

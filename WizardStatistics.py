@@ -20,7 +20,7 @@ class WizardStatistic(object):
 
     def __init__(self, num_games=20, players=None, num_players=4, num_agents=1, trick_prediction=False):
         self.logger = logging.getLogger('wizard-rl.WizardStatistics.WizardStatistic')
-        self.logger.info('creating an instance of WizardStatistics')
+        self.logger.info('starting a statistic: {} rounds to play'.format(num_games))
         self.num_games = num_games
         self.num_players = num_players
         self.num_agents = num_agents
@@ -50,7 +50,7 @@ class WizardStatistic(object):
             # evaluate scores
             index = np.argmax(scores)
             self.wins[i][index] = 1
-            print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
+            self.logger.info("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self):
         # plot:
@@ -79,7 +79,9 @@ class WizardStatistic(object):
         ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games')
         ax.legend()
         # plt.show()
-        plt.savefig('log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".png")
+        name_plot = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".png"
+        plt.savefig(name_plot)
+        self.logger.info("Plot saved in {}".format(name_plot))
 
     def get_playertype(self, player):
         if isinstance(player, RLAgent):
@@ -142,7 +144,7 @@ if __name__ == "__main__":
         # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
 
         # stat = WizardStatistic(num_games=50, num_agents=1, players=players)
-        stat = WizardStatistic(num_games=5000, num_agents=1, players=players2)
+        stat = WizardStatistic(num_games=50, num_agents=1, players=players2)
         stat.play_games()
         stat.plot_game_statistics()
 
