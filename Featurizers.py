@@ -1,6 +1,7 @@
 import Card
 import random
 from copy import deepcopy
+import logging
 
 
 class Featurizer(object):
@@ -8,11 +9,14 @@ class Featurizer(object):
     and transforms it into an array that is useful for an estimator."""
 
     def __init__(self, count_cards=True):
+        self.logger = logging.getLogger('wizard-rl.Featurizers.Featurizer')
         self.count_cards = count_cards
 
     def transform_handcards(self, player, trump):
-        hand_arr = self.cards_to_arr_trump_first(player.whole_hand, trump)
-        return hand_arr
+        hand_arr = self.cards_to_arr(player.whole_hand, trump)
+        trump_color = self.color_to_bin_arr(trump)
+
+        return hand_arr + trump_color
 
     def transform(self, player, trump, first, played, players, played_in_game):
         """

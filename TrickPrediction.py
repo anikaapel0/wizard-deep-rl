@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import random
+import logging
 
 from Player import AverageRandomPlayer
 from Wizard import Wizard
@@ -9,7 +10,8 @@ from Wizard import Wizard
 class TrickPrediction(object):
     n_hidden_1 = 40
 
-    def __init__(self, session, input_shape=54, memory=5000, batch_size=512, training_rounds=200):
+    def __init__(self, session, input_shape=59, memory=5000, batch_size=512, training_rounds=200):
+        self.logger = logging.getLogger('wizard-rl.TrickPrediction.TrickPrediction')
         self.input_shape = input_shape
         self.output_shape = 1
         self.memory = [([], 0, 0)] * memory

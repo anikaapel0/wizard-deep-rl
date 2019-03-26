@@ -9,10 +9,9 @@ from PolicyEstimator import PolicyGradient
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import logging
 
 import time
-import gc
-import psutil
 
 
 class WizardStatistic(object):
@@ -20,6 +19,8 @@ class WizardStatistic(object):
     plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 
     def __init__(self, num_games=20, players=None, num_players=4, num_agents=1, trick_prediction=False):
+        self.logger = logging.getLogger('wizard-rl.WizardStatistics.WizardStatistic')
+        self.logger.info('creating an instance of WizardStatistics')
         self.num_games = num_games
         self.num_players = num_players
         self.num_agents = num_agents
@@ -85,7 +86,7 @@ class WizardStatistic(object):
             if player.trick_prediction is None:
                 return "RLAgent"
             else:
-                return "RL Agent with Trick Prediction"
+                return "RLAgent with Trick Prediction"
         if isinstance(player, AverageRandomPlayer):
             return "AverageRandomPlayer"
         if isinstance(player, RandomPlayer):
@@ -96,7 +97,28 @@ class WizardStatistic(object):
             player.close()
 
 
+def init_logger():
+    # create logger with 'wizard-rl'
+    logger = logging.getLogger('wizard-rl')
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs debug messages
+    fh = logging.FileHandler('log/wizard-rl.log')
+    fh.setLevel(logging.DEBUG)
+    # create console handler with higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    # add handlers to logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+
 if __name__ == "__main__":
+    init_logger()
+
     with tf.Session() as sess:
         # tf.reset_default_graph()
         featurizer = Featurizer()
@@ -113,12 +135,18 @@ if __name__ == "__main__":
         players2 = [AverageRandomPlayer(), AverageRandomPlayer(), AverageRandomPlayer(),
                     RLAgent(estimator=pg_estimator, featurizer=featurizer)]
 
+        players = [AverageRandomPlayer(),
+                   RLAgent(estimator=estimator, trick_prediction=trick_predictor, featurizer=featurizer),
+                   AverageRandomPlayer(),
+                   RLAgent(estimator=estimator, featurizer=featurizer)]
         # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
 
-        stat = WizardStatistic(num_games=20000, num_agents=1, players=players2)
+        # stat = WizardStatistic(num_games=50, num_agents=1, players=players)
+        stat = WizardStatistic(num_games=5000, num_agents=1, players=players2)
         stat.play_games()
         stat.plot_game_statistics()
 
+        del players
         del players2
         del featurizer
         del estimator
@@ -126,15 +154,5 @@ if __name__ == "__main__":
         del trick_predictor
         del stat
 
-
-#        finally:
-#            if stat is not None:
-#                stat.close()
-
-    # print(psutil.cpu_percent())
-    # print(psutil.virtual_memory())  # physical memory usage
-    # gc.collect()
-    # print("After collecting:")
-    # print(psutil.virtual_memory())  # physical memory usage
 
 

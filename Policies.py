@@ -1,10 +1,13 @@
 import numpy as np
+import logging
+
 from Card import Card
 
 
 class Policy(object):
 
     def __init__(self, estimator, epsilon, decay=1):
+        self.logger = logging.getLogger('wizard-rl.Policies.Policy')
         self.estimator = estimator
         self.epsilon = epsilon
         self.decay_rate = decay

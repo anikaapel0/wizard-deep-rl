@@ -1,6 +1,8 @@
 import random
 import numpy as np
 import tensorflow as tf
+import logging
+
 from Card import Card
 
 
@@ -37,6 +39,7 @@ class DQNEstimator(Estimator):
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
                  gamma=0.95, target_update=5000, save_update=100000):
+        self.logger = logging.getLogger('wizard-rl.Estimators.DQNEstimator')
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.gamma = gamma
@@ -169,7 +172,7 @@ class DQNEstimator(Estimator):
 
         assert len(q_vars) == len(q_target_vars)
 
-        # hard update
+        # hard update of weights in target model
         self._session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
     def save(self, name="model-dqn"):
@@ -184,26 +187,3 @@ class DQNEstimator(Estimator):
     def load(self, name="model-dqn"):
         saver = tf.train.Saver()
         saver.restore(self.session, "/tmp/{}.ckpt".format(name))
-
-    def default_weights(self, n_input, n_output):
-        weights = {
-            'h1': tf.Variable(tf.random_normal([n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_3, n_output])),
-        }
-
-        return weights
-
-    def default_biases(self, n_output):
-        biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([n_output]))
-        }
-
-        return biases
-
-    def close(self):
-        self._session.close()

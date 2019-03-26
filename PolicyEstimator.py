@@ -3,12 +3,14 @@ from Estimators import Estimator
 
 import tensorflow as tf
 import numpy as np
+import logging
 
 
 class PolicyGradient(Estimator):
-    n_hidden_1 = 200
+    n_hidden_1 = 150
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500):
+        self.logger = logging.getLogger('wizard-rl.PolicyEstimator.PolicyGradient')
         self.memory = []
         self.memory_temp = []
         self.t = 0
@@ -23,6 +25,7 @@ class PolicyGradient(Estimator):
         self._actions = None
         self._rewards = None
         self._logits = None
+        self._probs = None
         self._loss = None
         self._optimizer = None
         self._merged = None
@@ -42,6 +45,7 @@ class PolicyGradient(Estimator):
             self._logits = tf.layers.dense(hidden1, self.output_shape, name="PG_Output",
                                            kernel_initializer=tf.contrib.layers.xavier_initializer())
             out = tf.sigmoid(self._logits, name="sigmoid")
+            self._probs = tf.math.exp(self._logits)
 
         with tf.variable_scope("PG_Learning"):
             cross_entropy = tf.losses.sigmoid_cross_entropy(self._actions, self._logits)
@@ -66,7 +70,7 @@ class PolicyGradient(Estimator):
 
         reward_discounted = 0
         for s, a, r, s_prime in reversed(self.memory_temp):
-            reward_discounted = reward_discounted * self.gamma + r  # ist r nicht immer 0 außer im letzten?
+            reward_discounted = reward_discounted * self.gamma + r // 10    # ist r nicht immer 0 außer im letzten?
             self.memory.append([s, a, reward_discounted])
 
         # reset temporary memory
@@ -113,10 +117,9 @@ class PolicyGradient(Estimator):
 
         self._sum_writer.add_summary(summary, self.t_train)
 
-
     def predict(self, s):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
-        logits = self.session.run(self._logits, feed_dict)
+        probs, logits = self.session.run([self._probs, self._logits], feed_dict)
         return logits
 
     def save(self, name):

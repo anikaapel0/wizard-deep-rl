@@ -1,9 +1,9 @@
 import Estimators
 import Policies
 import Featurizers
-from TrickPrediction import TrickPrediction
 from Player import AverageRandomPlayer
 import numpy as np
+import logging
 
 
 class RLAgent(AverageRandomPlayer):
@@ -11,6 +11,7 @@ class RLAgent(AverageRandomPlayer):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None):
         super().__init__()
+        self.logger = logging.getLogger('wizard-rl.RLAgents.RLAgent')
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
         else:
@@ -71,11 +72,9 @@ class RLAgent(AverageRandomPlayer):
         """
         state = self.featurizer.transform(self, trump, first, played, players,
                                           played_in_game)
-        terminal = False
         if self.old_state is not None and self.old_action is not None:
             r = self.reward
             if r != 0:
-                terminal = True
                 # If we got a reward, it's a terminal state.
                 # We signal this with an s_prime == None
                 self.estimator.update(self.old_state, self.old_action, r, None)

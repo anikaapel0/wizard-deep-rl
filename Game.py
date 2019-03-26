@@ -1,6 +1,7 @@
 from Card import Deck, Card
 from Trick import Trick
 from copy import deepcopy
+import logging
 
 
 class Game(object):
@@ -8,6 +9,7 @@ class Game(object):
     on the outcome of the tricks and the predictions."""
 
     def __init__(self, game_num, players, random_start):
+        self.logger = logging.getLogger('wizard-rl.Game.Game')
         self.game_num = game_num
         self.players = players
         self.deck = Deck()
