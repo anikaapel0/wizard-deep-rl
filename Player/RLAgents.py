@@ -1,12 +1,8 @@
 import logging
 
-import numpy as np
-
-import Estimator.ValueEstimators
-import Featurizers
-import Policies
-from Estimator import Estimators
-from Player import AverageRandomPlayer
+import Agent.Estimator.ValueEstimators
+from Agent import Featurizers, Policies
+from Player.Player import AverageRandomPlayer
 
 
 class RLAgent(AverageRandomPlayer):
@@ -20,11 +16,11 @@ class RLAgent(AverageRandomPlayer):
         else:
             self.featurizer = featurizer
         if estimator is None:
-            self.estimator = Estimator.ValueEstimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
+            self.estimator = Agent.Estimator.ValueEstimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
         else:
             self.estimator = estimator
         if policy is None:
-            self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=0.1)
+            self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=1)
         else:
             self.policy = policy
         if trick_prediction is None:
@@ -84,8 +80,7 @@ class RLAgent(AverageRandomPlayer):
             else:
                 self.estimator.update(self.old_state, self.old_action, r, state)
 
-        probs = self.policy.get_probabilities(state)
-        a = np.random.choice(len(probs), p=probs)
+        a = self.policy.get_action(state)
         card_to_play = self._remove_card_played(a)
         self.old_state = state
         self.old_action = a
@@ -117,7 +112,7 @@ class RLAgent(AverageRandomPlayer):
             RuntimeError when the action does not correspond to any card.
 
         """
-        assert isinstance(a, int), "action played is not an int as expected"
+        # assert isinstance(a, int), "action played is not an int as expected"
         card_to_return = None
         for card in self.hand:
             if int(card) == a:

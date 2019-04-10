@@ -1,10 +1,11 @@
-from Game import Game
-from Player import RandomPlayer, AverageRandomPlayer
-from Card import Card
-from Featurizers import Featurizer
-
 from random import seed, getstate, choice
+
 import numpy as np
+
+from Agent.Featurizers import Featurizer
+from Game.Game import Game
+from Game.Card import Card
+from Player.Player import AverageRandomPlayer
 
 
 class Wizard(object):

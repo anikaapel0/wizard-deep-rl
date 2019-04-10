@@ -4,8 +4,9 @@ import random
 import numpy as np
 import tensorflow as tf
 
-from Card import Card
-from Estimator.Estimators import Estimator
+from Agent.Estimator.Estimators import Estimator
+from Game.Card import Card
+from Game.Card import cards_to_bool_array
 
 
 class DQNEstimator(Estimator):
@@ -109,12 +110,11 @@ class DQNEstimator(Estimator):
                 # We update the action taken ONLY.
                 if ss_prime is not None:
                     # ss_prime is not None, so this is not a terminal state.
-                    # possible_actions = ss_prime[0: Card.DIFFERENT_CARDS]
-                    # correct it for Z's and N's
-                    # possible_actions[-1] = 1 if possible_actions[-1] >= 1 else 0
-                    # possible_actions[-2] = 1 if possible_actions[-2] >= 1 else 0
-                    # q_sa = self.predict_target(ss_prime) * possible_actions
-                    q_sa = self.predict_target(ss_prime)
+                    # get all playable q-values
+                    playable_bool = cards_to_bool_array(ss_prime[:Card.DIFFERENT_CARDS])
+                    q_sa = self.predict_target(ss_prime)[0]
+                    q_sa = q_sa[playable_bool]
+                    # q_sa = self.predict_target(ss_prime)
                     y[i, aa] = rr / 10 + self.gamma * np.max(q_sa)
                 else:
                     # ss_prime is None so this is a terminal state.

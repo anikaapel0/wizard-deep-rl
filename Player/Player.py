@@ -1,9 +1,9 @@
-from random import shuffle, randrange, choice, random
-from collections import Counter
-import Card
-import Featurizers
-
 import logging
+from collections import Counter
+from random import shuffle, randrange, choice, random
+
+from Agent import Featurizers
+from Game import Card
 
 
 class Player(object):

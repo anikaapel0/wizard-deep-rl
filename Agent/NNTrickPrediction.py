@@ -1,10 +1,11 @@
-import tensorflow as tf
-import numpy as np
-import random
 import logging
+import random
 
-from Player import AverageRandomPlayer
-from Wizard import Wizard
+import numpy as np
+import tensorflow as tf
+
+from Game.Wizard import Wizard
+from Player.Player import AverageRandomPlayer
 
 
 class NNTrickPrediction(object):

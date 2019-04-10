@@ -1,7 +1,10 @@
-import numpy as np
 import logging
+import random
 
-from Card import Card
+import numpy as np
+
+from Game.Card import Card
+from Game.Card import cards_to_bool_array
 
 
 class Policy(object):
@@ -14,7 +17,7 @@ class Policy(object):
         # In case we need to reset epsilon.
         self.original_epsilon = epsilon
 
-    def get_probabilities(self, x):
+    def get_action(self, x):
         raise NotImplementedError("This needs to be implemented by"
                                   "your Policy class.")
 
@@ -32,7 +35,7 @@ class Policy(object):
             assigned the min q value.
         """
 
-        playable_bool = self.get_playable_bool(x)
+        playable_bool = cards_to_bool_array(x)
         # Get the Q value estimations from the estimator.
         q = self.estimator.predict(x)[0]
         # Filter so that not playable cards have the min Q values.
@@ -40,35 +43,14 @@ class Policy(object):
         q_playable[~playable_bool] = np.min(q) - 1
         return q_playable
 
-    def get_playable_bool(self, x):
-        """
-        Returns a boolean array of the playable actions.
-        Args:
-            x:  Game state, the first 54 elements should describe the hand
-            of the player.
-
-        Returns:
-            playable_bool: boolean array of playable actions.
-
-        """
-        playable = x[:Card.DIFFERENT_CARDS]
-        # A player can have 0-4 Z(53/-1) or N(52/-2) cards in their hand.
-        # We need to make this into a "playable/not-playable" bool array.
-        # Anything above a 1 becomes 1(playable).
-        if playable[-2] >= 1:
-            playable[-2] = 1
-        if playable[-1] >= 1:
-            playable[-1] = 1
-        playable_bool = np.array(playable).astype(bool)
-        return playable_bool
-
 
 class EGreedyPolicy(Policy):
 
-    def __init__(self, estimator, epsilon):
-        super().__init__(estimator, epsilon)
+    def __init__(self, estimator, epsilon, decay=0.999):
+        super().__init__(estimator, epsilon, decay)
+        self.exploration_steps = 0
 
-    def get_probabilities(self, x):
+    def get_action(self, x):
         """
         Returns the probabilities for each action
         Args:
@@ -81,19 +63,18 @@ class EGreedyPolicy(Policy):
 
         """
         self.epsilon *= self.decay_rate
+        # self.logger.info("Exploration with epsilon: {}".format(self.epsilon))
         num_a = Card.DIFFERENT_CARDS
-        playable_bool = self.get_playable_bool(x)
-        q_playable = self.get_playable_q(x)
 
         # All probabilities start as 0
-        probs = np.zeros(num_a)
-        # Only potential actions are the playable ones.
-        # assign epsilon probabilities to every potential action.
-        probs[playable_bool] += self.epsilon/sum(playable_bool)
-        # self.logger.info(q_playable)
-        # Find the greedy action
-        greedy_a = np.argmax(q_playable)
-        # Give it the highest probability.
-        probs[greedy_a] += (1-self.epsilon)
-        # self.logger.info(probs)
-        return probs
+        e = random.uniform(0, 1)
+
+        if e < self.epsilon:
+            # random choice
+            playable_bool = cards_to_bool_array(x)
+            playable_cards = np.arange(0, num_a)[playable_bool]
+            action = np.random.choice(playable_cards)
+        else:
+            q_playable = self.get_playable_q(x)
+            action = np.argmax(q_playable)
+        return action

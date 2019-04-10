@@ -3,8 +3,8 @@ import logging
 import numpy as np
 import tensorflow as tf
 
-from Card import Card
-from Estimator.Estimators import Estimator
+from Agent.Estimator.Estimators import Estimator
+from Game.Card import Card
 
 
 class PolicyGradient(Estimator):

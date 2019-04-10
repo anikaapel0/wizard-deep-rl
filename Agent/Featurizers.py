@@ -1,7 +1,8 @@
-import Card
+import logging
 import random
 from copy import deepcopy
-import logging
+
+from Game import Card
 
 
 class Featurizer(object):

@@ -1,7 +1,8 @@
-from Card import Deck, Card
-from Trick import Trick
-from copy import deepcopy
 import logging
+from copy import deepcopy
+
+from Game.Card import Deck, Card
+from Game.Trick import Trick
 
 
 class Game(object):

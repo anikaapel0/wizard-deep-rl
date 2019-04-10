@@ -4,14 +4,15 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from Agent.Estimator.ValueEstimators import DQNEstimator
 
-from Estimator.ValueEstimators import DQNEstimator
-from Estimator.PolicyEstimator import PolicyGradient
-from Featurizers import Featurizer
-from NNTrickPrediction import NNTrickPrediction
-from Player import RandomPlayer, AverageRandomPlayer, TrickPredictionRandomPlayer
-from RLAgents import RLAgent
-from Wizard import Wizard
+from Agent.Estimator.PolicyEstimator import PolicyGradient
+from Agent.Featurizers import Featurizer
+from Agent.NNTrickPrediction import NNTrickPrediction
+from Game.Wizard import Wizard
+from Player.Player import RandomPlayer, AverageRandomPlayer, TrickPredictionRandomPlayer
+from Player.RLAgents import RLAgent
+import random
 
 
 class WizardStatistic(object):
@@ -121,6 +122,10 @@ def init_logger():
 
 
 if __name__ == "__main__":
+    # set seed
+    np.random.seed(2)
+    random.seed(2)
+
     init_logger()
 
     tf.reset_default_graph()
