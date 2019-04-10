@@ -1,0 +1,16 @@
+class TrickPrediction(object):
+    def __init__(self):
+        self.model = None
+
+    def update(self, cards, num_forecast, num_tricks):
+        raise NotImplementedError("This method must be implemented by"
+                                  "your Estimator class.")
+
+    def predict(self, s, average):
+        raise NotImplementedError("This method must be implemented by"
+                                  "your Estimator class")
+
+    def close(self):
+        raise NotImplementedError("This method must be implemented by"
+                                  "your Estimator class")
+

@@ -1,13 +1,15 @@
-from Card import Card
-from Estimators import Estimator
-
-import tensorflow as tf
-import numpy as np
 import logging
+
+import numpy as np
+import tensorflow as tf
+
+from Card import Card
+from Estimator.Estimators import Estimator
 
 
 class PolicyGradient(Estimator):
-    n_hidden_1 = 150
+    n_hidden_1 = 500
+    n_hidden_2 = 250
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500):
         self.logger = logging.getLogger('wizard-rl.PolicyEstimator.PolicyGradient')
@@ -42,10 +44,13 @@ class PolicyGradient(Estimator):
             hidden1 = tf.layers.dense(self._x, self.n_hidden_1, name="PG_Hidden_1",
                                       activation=tf.nn.relu,
                                       kernel_initializer=tf.contrib.layers.xavier_initializer())
-            self._logits = tf.layers.dense(hidden1, self.output_shape, name="PG_Output",
+            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, name="PG_Hidden_2",
+                                      activation=tf.nn.relu,
+                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
+            self._logits = tf.layers.dense(hidden2, self.output_shape, name="PG_Output",
                                            kernel_initializer=tf.contrib.layers.xavier_initializer())
             out = tf.sigmoid(self._logits, name="sigmoid")
-            self._probs = tf.math.exp(self._logits)
+            self._probs = tf.nn.softmax(self._logits)
 
         with tf.variable_scope("PG_Learning"):
             cross_entropy = tf.losses.sigmoid_cross_entropy(self._actions, self._logits)
@@ -120,7 +125,7 @@ class PolicyGradient(Estimator):
     def predict(self, s):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
         probs, logits = self.session.run([self._probs, self._logits], feed_dict)
-        return logits
+        return probs
 
     def save(self, name):
         raise NotImplementedError("This method must be implemented by"
@@ -129,3 +134,7 @@ class PolicyGradient(Estimator):
     def load(self, name):
         raise NotImplementedError("This method must be implemented by"
                                   "your Estimator class")
+
+    def name_to_string(self):
+        return "PolicyGradient"
+

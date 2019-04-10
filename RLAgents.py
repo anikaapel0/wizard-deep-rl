@@ -1,9 +1,12 @@
-import Estimators
-import Policies
-import Featurizers
-from Player import AverageRandomPlayer
-import numpy as np
 import logging
+
+import numpy as np
+
+import Estimator.ValueEstimators
+import Featurizers
+import Policies
+from Estimator import Estimators
+from Player import AverageRandomPlayer
 
 
 class RLAgent(AverageRandomPlayer):
@@ -17,7 +20,7 @@ class RLAgent(AverageRandomPlayer):
         else:
             self.featurizer = featurizer
         if estimator is None:
-            self.estimator = Estimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
+            self.estimator = Estimator.ValueEstimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
         else:
             self.estimator = estimator
         if policy is None:
@@ -44,7 +47,7 @@ class RLAgent(AverageRandomPlayer):
 
         # round prediction
         final_pred = int(round(prediction))
-        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+        self.logger.info("Prediction: {}, Hand: {}, Trump: {}".format(final_pred, self.whole_hand, trump))
         if restriction is not None and final_pred == restriction:
             if prediction < final_pred:
                 final_pred -= 1
@@ -126,13 +129,6 @@ class RLAgent(AverageRandomPlayer):
                                "action.\nHand: {}\nAction: {}".format(self.hand,
                                                                       a))
         return card_to_return
-
-    def trick_ended(self, trump):
-        if self.trick_prediction is not None:
-            arr_cards = self.featurizer.cards_to_arr_trump_first(self.whole_hand, trump)
-            self.trick_prediction.update(arr_cards, self.prediction, self.wins)
-
-
 
     def close(self):
         # close tensorflow sessions

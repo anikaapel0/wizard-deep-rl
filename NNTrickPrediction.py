@@ -7,10 +7,10 @@ from Player import AverageRandomPlayer
 from Wizard import Wizard
 
 
-class TrickPrediction(object):
+class NNTrickPrediction(object):
     n_hidden_1 = 40
 
-    def __init__(self, session, input_shape=59, memory=5000, batch_size=512, training_rounds=200):
+    def __init__(self, session, input_shape=59, memory=5000, batch_size=512, training_rounds=200, name=""):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction.TrickPrediction')
         self.input_shape = input_shape
         self.output_shape = 1
@@ -29,23 +29,24 @@ class TrickPrediction(object):
         self._trained = False
         self._merged2 = None
         self._train_writer = None
+        self._name = name
         self.training_rounds = training_rounds
         self._init_model()
 
     def _init_model(self):
-        with tf.variable_scope("Input_Data_TrickPrediction"):
+        with tf.variable_scope("Input_Data_TrickPrediction_{}".format(self._name)):
             self._features = tf.placeholder("float", [None, self.input_shape], name="handcards")
             self._tricks = tf.placeholder("float", [None, self.output_shape], name="num_tricks")
 
-        with tf.variable_scope("Trick_Prediction_Network"):
+        with tf.variable_scope("Trick_Prediction_Network_{}".format(self._name)):
             hidden1_trick = tf.layers.dense(self._features, self.n_hidden_1, activation=tf.nn.relu, name="Trick_Hidden_1")
             self._trick_prediction = tf.layers.dense(hidden1_trick, self.output_shape, use_bias=False)
 
-        with tf.variable_scope("Learning_TrickPrediction"):
+        with tf.variable_scope("Learning_TrickPrediction_{}".format(self._name)):
             self._trick_loss = tf.losses.mean_squared_error(self._tricks, self._trick_prediction)
             self._trick_optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._trick_loss)
 
-        sum_trick_loss = tf.summary.scalar('loss_trick-prediction', self._trick_loss)
+        sum_trick_loss = tf.summary.scalar('loss_trick-prediction_{}'.format(self._name), self._trick_loss)
 
         self._merged2 = tf.summary.merge([sum_trick_loss])
         self._var_init = tf.global_variables_initializer()

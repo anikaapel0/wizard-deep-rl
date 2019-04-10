@@ -49,6 +49,9 @@ class Card(object):
         index = shuffled_colors.index(self.color)
         return index*13 + (self.value - 1)
 
+    def is_z(self):
+        return self.color == "White" and self.value == 13
+
     @staticmethod
     def int_to_card(x):
         if x == 52:

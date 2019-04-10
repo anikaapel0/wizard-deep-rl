@@ -1,35 +1,11 @@
+import logging
 import random
+
 import numpy as np
 import tensorflow as tf
-import logging
 
 from Card import Card
-
-
-class Estimator(object):
-    """
-    An state-action value function estimator. All state inputs must already
-    be transformed by a 'featurizer' before being used with Estimator methods.
-    """
-
-    def __init__(self):
-        self.model = None
-
-    def update(self, s, a, r, s_prime):
-        raise NotImplementedError("This method must be implemented by"
-                                  "your Estimator class.")
-
-    def predict(self, s):
-        raise NotImplementedError("This method must be implemented by"
-                                  "your Estimator class")
-
-    def save(self, name):
-        raise NotImplementedError("This method must be implemented by"
-                                  "your Estimator class")
-
-    def load(self, name):
-        raise NotImplementedError("This method must be implemented by"
-                                  "your Estimator class")
+from Estimator.Estimators import Estimator
 
 
 class DQNEstimator(Estimator):
@@ -37,7 +13,7 @@ class DQNEstimator(Estimator):
     n_hidden_2 = 512
     n_hidden_3 = 1024
 
-    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=512,
                  gamma=0.95, target_update=5000, save_update=100000):
         self.logger = logging.getLogger('wizard-rl.Estimators.DQNEstimator')
         self.input_shape = input_shape
@@ -133,6 +109,11 @@ class DQNEstimator(Estimator):
                 # We update the action taken ONLY.
                 if ss_prime is not None:
                     # ss_prime is not None, so this is not a terminal state.
+                    # possible_actions = ss_prime[0: Card.DIFFERENT_CARDS]
+                    # correct it for Z's and N's
+                    # possible_actions[-1] = 1 if possible_actions[-1] >= 1 else 0
+                    # possible_actions[-2] = 1 if possible_actions[-2] >= 1 else 0
+                    # q_sa = self.predict_target(ss_prime) * possible_actions
                     q_sa = self.predict_target(ss_prime)
                     y[i, aa] = rr / 10 + self.gamma * np.max(q_sa)
                 else:
@@ -187,3 +168,27 @@ class DQNEstimator(Estimator):
     def load(self, name="model-dqn"):
         saver = tf.train.Saver()
         saver.restore(self.session, "/tmp/{}.ckpt".format(name))
+
+    def name_to_string(self):
+        return "DQN"
+
+
+class DoubleDQNEstimator(Estimator):
+
+    def __init__(self):
+        super.__init__()
+
+    def predict(self, s):
+        pass
+
+    def save(self, name):
+        pass
+
+    def load(self, name):
+        pass
+
+    def name_to_string(self):
+        return "Double DQN"
+
+    def update(self, s, a, r, s_prime):
+        pass

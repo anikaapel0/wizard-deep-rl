@@ -1,6 +1,9 @@
 from random import shuffle, randrange, choice, random
 from collections import Counter
 import Card
+import Featurizers
+
+import logging
 
 
 class Player(object):
@@ -12,6 +15,7 @@ class Player(object):
         self.wins = 0
         self.prediction = -1
         self.whole_hand = None
+        self.trick_prediction = None
 
     def get_playable_cards(self, first):
         playable_cards = []
@@ -43,7 +47,9 @@ class Player(object):
         raise NotImplementedError("This needs to be implemented by your Player class")
 
     def trick_ended(self, trump):
-        return
+        if self.trick_prediction is not None:
+            arr_cards = self.featurizer.transform_handcards(self, trump)
+            self.trick_prediction.update(arr_cards, self.prediction, self.wins)
 
     def give_reward(self, reward):
         self.reward = reward
@@ -106,6 +112,7 @@ class AverageRandomPlayer(RandomPlayer):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger('wizard-rl.Player.AverageRandomPlayer')
 
     def get_prediction(self, trump, predictions, players, restriction=None):
         prediction = len(self.hand) // len(predictions)
@@ -116,6 +123,89 @@ class AverageRandomPlayer(RandomPlayer):
                 prediction -= 1
         self.prediction = prediction
         return prediction
+
+    def get_trump_color(self):
+        # Return the color the agent has the most of in its hand.
+        color_counter = Counter()
+        for card in self.hand:
+            color = card.color
+            if color == "White":
+                continue
+            color_counter[color] += 1
+        if not color_counter.most_common(1):
+            return super().get_trump_color()
+        else:
+            return color_counter.most_common(1)[0][0]
+
+
+class TrickPredictionRandomPlayer(RandomPlayer):
+    def __init__(self, trick_prediction, featurizer=None):
+        super().__init__()
+        self.logger = logging.getLogger('wizard-rl.Player.TrickPredictionRandomPlayer')
+        self.trick_prediction = trick_prediction
+        if featurizer is None:
+            self.featurizer = Featurizers.Featurizer()
+        else:
+            self.featurizer = featurizer
+
+    def get_prediction(self, trump, predictions, players, restriction=None):
+        s = self.featurizer.transform_handcards(self, trump)
+        average = len(self.hand) // len(predictions)
+        prediction = self.trick_prediction.predict(s, average)
+
+        # round prediction
+        final_pred = int(round(prediction))
+        self.logger.info("Prediction: {}, Hand: {}, Trump: {}".format(final_pred, self.whole_hand, trump))
+        if restriction is not None and final_pred == restriction:
+            if prediction < final_pred:
+                final_pred -= 1
+            else:
+                final_pred += 1
+
+        return final_pred
+
+    def get_trump_color(self):
+        # Return the color the agent has the most of in its hand.
+        color_counter = Counter()
+        for card in self.hand:
+            color = card.color
+            if color == "White":
+                continue
+            color_counter[color] += 1
+        if not color_counter.most_common(1):
+            return super().get_trump_color()
+        else:
+            return color_counter.most_common(1)[0][0]
+
+
+class FunctionRandomPlayer(RandomPlayer):
+    def __init__(self):
+        super().__init__()
+        self.logger = logging.getLogger('wizard-rl.Player.FunctionRandomPlayer')
+
+    def get_prediction(self, trump, predictions, players, restriction=None):
+        score = 0
+        # loop through cards
+        for card in self.hand:
+            # zauberer
+            if card.is_z():
+                score += 0.99
+            # trump card
+            elif card.color == trump.color:
+                score += (0.9/12 * card.value - 0.075)
+            # normal card
+            else:
+                score += (0.8/6 * card.value - 28/30)
+
+        final_score = round(score)
+
+        if restriction is not None and final_score == restriction:
+            if score < final_score:
+                final_score -= 1
+            else:
+                final_score += 1
+
+        return final_score
 
     def get_trump_color(self):
         # Return the color the agent has the most of in its hand.

@@ -1,17 +1,17 @@
-from RLAgents import RLAgent
-from Player import RandomPlayer, AverageRandomPlayer
-from Wizard import Wizard
-from Featurizers import Featurizer
-from TrickPrediction import TrickPrediction
-from Estimators import DQNEstimator
-from PolicyEstimator import PolicyGradient
-
-import numpy as np
-import matplotlib.pyplot as plt
-import tensorflow as tf
 import logging
-
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
+from Estimator.ValueEstimators import DQNEstimator
+from Estimator.PolicyEstimator import PolicyGradient
+from Featurizers import Featurizer
+from NNTrickPrediction import NNTrickPrediction
+from Player import RandomPlayer, AverageRandomPlayer, TrickPredictionRandomPlayer
+from RLAgents import RLAgent
+from Wizard import Wizard
 
 
 class WizardStatistic(object):
@@ -36,7 +36,7 @@ class WizardStatistic(object):
             estimator = DQNEstimator(input_shape=featurizer.get_state_size())
             trick_predictor = None
             if trick_prediction:
-                trick_predictor = TrickPrediction()
+                trick_predictor = NNTrickPrediction()
             for _ in range(num_agents):
                 self.players.append(RLAgent(estimator=estimator, featurizer=featurizer,
                                             trick_prediction=trick_predictor))
@@ -85,14 +85,16 @@ class WizardStatistic(object):
 
     def get_playertype(self, player):
         if isinstance(player, RLAgent):
-            if player.trick_prediction is None:
-                return "RLAgent"
-            else:
-                return "RLAgent with Trick Prediction"
-        if isinstance(player, AverageRandomPlayer):
-            return "AverageRandomPlayer"
-        if isinstance(player, RandomPlayer):
-            return "RandomPlayer"
+            name = "RLAgent ({})".format(player.estimator.name_to_string())
+        elif isinstance(player, AverageRandomPlayer):
+            name = "AverageRandomPlayer"
+        elif isinstance(player, RandomPlayer):
+            name = "RandomPlayer"
+
+        if player.trick_prediction is not None:
+            name += " with Trick Prediction"
+
+        return name
 
     def close(self):
         for player in self.players:
@@ -121,40 +123,50 @@ def init_logger():
 if __name__ == "__main__":
     init_logger()
 
+    tf.reset_default_graph()
     with tf.Session() as sess:
-        # tf.reset_default_graph()
         featurizer = Featurizer()
         estimator = DQNEstimator(session=sess, input_shape=featurizer.get_state_size())
         pg_estimator = PolicyGradient(session=sess, input_shape=featurizer.get_state_size())
-
-        trick_predictor = TrickPrediction(session=sess)
-        init = tf.global_variables_initializer()
+        trick_predictor = NNTrickPrediction(session=sess, name="Random")
+        trick_predictor_random = NNTrickPrediction(session=sess)
         sess.run(tf.global_variables_initializer())
 
         writer = tf.summary.FileWriter("log/graph", sess.graph)
         writer.close()
 
+        players3 = [TrickPredictionRandomPlayer(trick_prediction=trick_predictor_random),
+                    TrickPredictionRandomPlayer(trick_prediction=trick_predictor_random),
+                    # RLAgent(estimator=estimator),
+                    TrickPredictionRandomPlayer(trick_prediction=trick_predictor_random),
+                    # AverageRandomPlayer(),
+                    # RLAgent(estimator=pg_estimator, featurizer=featurizer),
+                    # FunctionRandomPlayer()]
+                    RLAgent(estimator=pg_estimator, trick_prediction=trick_predictor, featurizer=featurizer)]
+
         players2 = [AverageRandomPlayer(), AverageRandomPlayer(), AverageRandomPlayer(),
                     RLAgent(estimator=pg_estimator, featurizer=featurizer)]
 
         players = [AverageRandomPlayer(),
-                   RLAgent(estimator=estimator, trick_prediction=trick_predictor, featurizer=featurizer),
+                   # RLAgent(estimator=estimator, trick_prediction=trick_predictor, featurizer=featurizer),
+                   AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    RLAgent(estimator=estimator, featurizer=featurizer)]
         # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
 
-        # stat = WizardStatistic(num_games=50, num_agents=1, players=players)
-        stat = WizardStatistic(num_games=50, num_agents=1, players=players2)
+        stat = WizardStatistic(num_games=2000, num_agents=1, players=players)
+        # stat = WizardStatistic(num_games=5000, num_agents=1, players=players2)
+        # stat = WizardStatistic(num_games=5000, num_agents=1, players=players3)
+
         stat.play_games()
         stat.plot_game_statistics()
 
         del players
         del players2
+        del players3
         del featurizer
         del estimator
         del pg_estimator
         del trick_predictor
+        del trick_predictor_random
         del stat
-
-
-
