@@ -2,12 +2,12 @@ from RLAgents import RLAgent
 from Player import RandomPlayer, AverageRandomPlayer
 from Wizard import Wizard
 
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 class WizardStatistic(object):
-
     plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 
     def __init__(self, num_games=20, num_players=4, num_agents=1, trick_prediction=False):
@@ -32,7 +32,7 @@ class WizardStatistic(object):
             self.wins[i][index] = 1
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
-    def plot_game_statistics(self):
+    def plot_game_statistics(self, interval = 200):
         # plot:
         # x-Achse: gespielte Runden
         # y-Achse: Prozent gewonnene Spiele
@@ -45,16 +45,17 @@ class WizardStatistic(object):
             won_stat = np.zeros(self.num_games, dtype=float)
 
             for game in range(self.num_games):
-                if game < 1000:
-                    won_stat[game] = np.sum(won_games[:game]) / (game + 1)
+                if 50 <= game < interval:
+                    won_stat[game] = np.sum(won_games[50:game]) / (game - 50 + 1)
                 else:
-                    won_stat[game] = np.sum(won_games[game-1000:game]) / 1000
+                    won_stat[game] = np.sum(won_games[game - interval:game]) / interval
 
             ax.plot(stat_num_games, won_stat, color=self.plot_colors[i], label=self.get_playertype(self.players[i]))
 
-        ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games')
+        ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games of last {} games'.format(interval))
         ax.legend()
-        plt.show()
+        name_plot = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".png"
+        plt.savefig(name_plot)
 
     def get_playertype(self, player):
         if isinstance(player, RLAgent):
@@ -66,7 +67,6 @@ class WizardStatistic(object):
 
 
 if __name__ == "__main__":
-    stat = WizardStatistic(num_games=30, num_agents=1, trick_prediction=True)
+    stat = WizardStatistic(num_games=5000, num_agents=1, trick_prediction=False)
     stat.play_games()
     stat.plot_game_statistics()
-
