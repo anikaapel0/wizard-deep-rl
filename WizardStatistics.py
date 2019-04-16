@@ -123,8 +123,8 @@ def init_logger():
 
 if __name__ == "__main__":
     # set seed
-    np.random.seed(2)
-    random.seed(2)
+    # np.random.seed(2)
+    # random.seed(2)
 
     init_logger()
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
                    RLAgent(estimator=estimator, featurizer=featurizer)]
         # players = [RLAgent(estimator=estimator, featurizer=featurizer) for _ in range(4)]
 
-        stat = WizardStatistic(num_games=2000, num_agents=1, players=players)
+        stat = WizardStatistic(num_games=4000, num_agents=1, players=players)
         # stat = WizardStatistic(num_games=5000, num_agents=1, players=players2)
         # stat = WizardStatistic(num_games=5000, num_agents=1, players=players3)
 

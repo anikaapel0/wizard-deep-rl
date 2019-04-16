@@ -14,7 +14,7 @@ class DQNEstimator(Estimator):
     n_hidden_2 = 512
     n_hidden_3 = 1024
 
-    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=512,
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
                  gamma=0.95, target_update=5000, save_update=100000):
         self.logger = logging.getLogger('wizard-rl.Estimators.DQNEstimator')
         self.input_shape = input_shape
@@ -42,12 +42,9 @@ class DQNEstimator(Estimator):
     def dqn_network(self, input, scope_name, act=tf.nn.relu):
 
         with tf.variable_scope(scope_name):
-            hidden1 = tf.layers.dense(input, self.n_hidden_1, activation=act, name=scope_name + "_1",
-                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
-            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, activation=act, name=scope_name + "_2",
-                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
-            hidden3 = tf.layers.dense(hidden2, self.n_hidden_3, activation=act, name=scope_name + "_3",
-                                      kernel_initializer=tf.contrib.layers.xavier_initializer())
+            hidden1 = tf.layers.dense(input, self.n_hidden_1, activation=act, name=scope_name + "_1")
+            hidden2 = tf.layers.dense(hidden1, self.n_hidden_2, activation=act, name=scope_name + "_2")
+            hidden3 = tf.layers.dense(hidden2, self.n_hidden_3, activation=act, name=scope_name + "_3")
 
             prediction = tf.layers.dense(hidden3, self.output_shape)
 
@@ -63,9 +60,9 @@ class DQNEstimator(Estimator):
 
         with tf.variable_scope("Learning_CardPrediction"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.005).minimize(self._loss)
 
-        sum_loss = tf.summary.scalar('loss_card-prediction', self._loss)
+        sum_loss = tf.summary.scalar('loss_dqn', self._loss)
 
         self._merged = tf.summary.merge([sum_loss])
         self._sum_writer = tf.summary.FileWriter("log/dqn/train-summary", self._session.graph)
