@@ -10,7 +10,7 @@ import numpy as np
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=False):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None):
         super().__init__()
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
@@ -24,10 +24,7 @@ class RLAgent(AverageRandomPlayer):
             self.policy = Policies.EGreedyPolicy(self.estimator, epsilon=0.1)
         else:
             self.policy = policy
-        if trick_prediction:
-            self.trick_prediction = TrickPrediction()
-        else:
-            self.trick_prediction = None
+        self.trick_prediction = trick_prediction
 
         self.old_state = None
         self.old_score = 0
@@ -39,15 +36,17 @@ class RLAgent(AverageRandomPlayer):
             return super(RLAgent, self).get_prediction(trump, predictions, players, restriction)
 
         s = self.featurizer.transform_handcards(self, trump)
-        prediction = self.trick_prediction.predict(s)
+        average = len(self.whole_hand) // len(players)
+        prediction = self.trick_prediction.predict(s, average)
 
         # round prediction
-        final_pred = int(round(prediction[0, 0]))
+        final_pred = int(round(prediction))
         if restriction is not None and final_pred == restriction:
             if prediction < final_pred:
                 final_pred -= 1
             else:
                 final_pred += 1
+        print("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
 
         return final_pred
 
@@ -129,5 +128,5 @@ class RLAgent(AverageRandomPlayer):
 
     def trick_ended(self, trump):
         if self.trick_prediction is not None:
-            arr_cards = self.featurizer.cards_to_arr_trump_first(self.whole_hand, trump)
+            arr_cards = self.featurizer.transform_handcards(self, trump)
             self.trick_prediction.update(arr_cards, self.prediction, self.wins)

@@ -1,27 +1,24 @@
 from RLAgents import RLAgent
 from Player import RandomPlayer, AverageRandomPlayer
 from Wizard import Wizard
+from ValueEstimators import DQNEstimator, DoubleDQNEstimator
+from Featurizers import Featurizer
+from TrickPrediction import TrickPrediction
 
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 
 class WizardStatistic(object):
     plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 
-    def __init__(self, num_games=20, num_players=4, num_agents=1, trick_prediction=False):
+    def __init__(self, players, num_games=20):
         self.num_games = num_games
-        self.num_players = num_players
-        self.num_agents = num_agents
-        self.wins = np.zeros((num_games, num_players))
-        self.players = []
-        # init average random players
-        for _ in range(num_agents, num_players):
-            self.players.append(AverageRandomPlayer())
-        # init agents
-        for _ in range(num_agents):
-            self.players.append(RLAgent(trick_prediction=trick_prediction))
+        self.num_players = len(players)
+        self.wins = np.zeros((num_games, len(players)))
+        self.players = players
 
     def play_games(self):
         for i in range(self.num_games):
@@ -32,7 +29,7 @@ class WizardStatistic(object):
             self.wins[i][index] = 1
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
-    def plot_game_statistics(self, interval = 200):
+    def plot_game_statistics(self, interval=200):
         # plot:
         # x-Achse: gespielte Runden
         # y-Achse: Prozent gewonnene Spiele
@@ -67,6 +64,21 @@ class WizardStatistic(object):
 
 
 if __name__ == "__main__":
-    stat = WizardStatistic(num_games=5000, num_agents=1, trick_prediction=False)
-    stat.play_games()
-    stat.plot_game_statistics()
+    tf.reset_default_graph()
+
+    with tf.Session() as sess:
+        featurizer = Featurizer()
+        estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
+        double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size())
+        tp = TrickPrediction(sess)
+
+        sess.run(tf.global_variables_initializer())
+
+        players = [AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   RLAgent(featurizer=featurizer, estimator=double_estimator)]
+
+        stat = WizardStatistic(players, num_games=5000)
+        stat.play_games()
+        stat.plot_game_statistics()

@@ -63,6 +63,7 @@ class Policy(object):
 class EGreedyPolicy(Policy):
 
     def __init__(self, estimator, epsilon):
+        self.curr_epsilon = 1 - epsilon
         super().__init__(estimator, epsilon)
 
     def get_probabilities(self, x):
@@ -77,7 +78,8 @@ class EGreedyPolicy(Policy):
             each action available.
 
         """
-        self.epsilon *= self.decay_rate
+        self.curr_epsilon *= self.decay_rate
+        epsilon = self.curr_epsilon + self.epsilon
         num_a = Card.DIFFERENT_CARDS
         playable_bool = self.get_playable_bool(x)
         q_playable = self.get_playable_q(x)
@@ -86,11 +88,11 @@ class EGreedyPolicy(Policy):
         probs = np.zeros(num_a)
         # Only potential actions are the playable ones.
         # assign epsilon probabilities to every potential action.
-        probs[playable_bool] += self.epsilon/sum(playable_bool)
+        probs[playable_bool] += epsilon/sum(playable_bool)
         # print(q_playable)
         # Find the greedy action
         greedy_a = np.argmax(q_playable)
         # Give it the highest probability.
-        probs[greedy_a] += (1-self.epsilon)
+        probs[greedy_a] += (1-epsilon)
         # print(probs)
         return probs
