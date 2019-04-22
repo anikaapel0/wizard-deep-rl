@@ -29,4 +29,9 @@ class Estimator(object):
         raise NotImplementedError("This method must be implemented by"
                                   "your Estimator class")
 
+    def name(self):
+        raise NotImplementedError("This method must be implemented by"
+                                  "your Estimator class")
+
+
 

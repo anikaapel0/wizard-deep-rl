@@ -1,7 +1,7 @@
-import Estimators
+import ValueEstimators
+import PolicyEstimators
 import Policies
 import Featurizers
-from TrickPrediction import TrickPrediction
 from Player import Player, RandomPlayer, AverageRandomPlayer
 from copy import deepcopy
 import numpy as np
@@ -10,14 +10,15 @@ import numpy as np
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
         super().__init__()
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
         else:
             self.featurizer = featurizer
         if estimator is None:
-            self.estimator = Estimators.DQNEstimator(input_shape=self.featurizer.get_state_size())
+            assert session is not None
+            self.estimator = ValueEstimators.DQNEstimator(session, input_shape=self.featurizer.get_state_size())
         else:
             self.estimator = estimator
         if policy is None:
@@ -80,8 +81,7 @@ class RLAgent(AverageRandomPlayer):
             else:
                 self.estimator.update(self.old_state, self.old_action, r, state)
 
-        probs = self.policy.get_probabilities(state)
-        a = np.random.choice(len(probs), p=probs)
+        a = self.policy.get_action(state)
         card_to_play = self._remove_card_played(a)
         self.old_state = None if terminal else state
         self.old_action = a
@@ -113,7 +113,6 @@ class RLAgent(AverageRandomPlayer):
             RuntimeError when the action does not correspond to any card.
 
         """
-        assert isinstance(a, int), "action played is not an int as expected"
         card_to_return = None
         for card in self.hand:
             if int(card) == a:
@@ -130,3 +129,37 @@ class RLAgent(AverageRandomPlayer):
         if self.trick_prediction is not None:
             arr_cards = self.featurizer.transform_handcards(self, trump)
             self.trick_prediction.update(arr_cards, self.prediction, self.wins)
+
+
+class DQNAgent(RLAgent):
+
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)
+
+
+class DoubleDQNAgent(RLAgent):
+
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+        if featurizer is None:
+            featurizer = Featurizers.Featurizer()
+
+        if estimator is None:
+            assert session is not None
+            estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size())
+        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)
+
+
+class PGAgent(RLAgent):
+
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+        if featurizer is None:
+            featurizer = Featurizers.Featurizer
+        if policy is None:
+            policy = Policies.MaxPolicy(featurizer)
+        if estimator is None:
+            assert session is not None
+            estimator = PolicyEstimators.PolicyGradient(session, featurizer.get_state_size())
+        else:
+            assert isinstance(estimator, PolicyEstimators.PolicyGradient)
+
+        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)

@@ -1,5 +1,7 @@
 from random import shuffle
 
+import numpy as np
+
 
 class Card(object):
 
@@ -133,3 +135,26 @@ def is_new_winner(new_card, old_card, trump, first_card):
                 else:
                     # Both are first_card color, bigger value wins.
                     return old_card.value < new_card.value
+
+
+def cards_to_bool_array(x):
+    """
+    Returns a boolean array of the playable actions.
+    Args:
+        x:  Game state, the first 54 elements should describe the hand
+        of the player.
+
+    Returns:
+        playable_bool: boolean array of playable actions.
+
+    """
+    playable = x[:Card.DIFFERENT_CARDS]
+    # A player can have 0-4 Z(53/-1) or N(52/-2) cards in their hand.
+    # We need to make this into a "playable/not-playable" bool array.
+    # Anything above a 1 becomes 1(playable).
+    if playable[-2] >= 1:
+        playable[-2] = 1
+    if playable[-1] >= 1:
+        playable[-1] = 1
+    playable_bool = np.array(playable).astype(bool)
+    return playable_bool

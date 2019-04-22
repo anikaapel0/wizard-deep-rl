@@ -4,6 +4,10 @@ from Wizard import Wizard
 from ValueEstimators import DQNEstimator, DoubleDQNEstimator
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
+from Policies import MaxPolicy
+from PolicyEstimators import PolicyGradient
+
+from plotting import plot_moving_average_scores, plot_moving_average_wins
 
 import time
 import numpy as np
@@ -12,12 +16,12 @@ import tensorflow as tf
 
 
 class WizardStatistic(object):
-    plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 
     def __init__(self, players, num_games=20):
         self.num_games = num_games
         self.num_players = len(players)
         self.wins = np.zeros((num_games, len(players)))
+        self.scores = np.zeros((num_games, len(players)))
         self.players = players
 
     def play_games(self):
@@ -27,40 +31,16 @@ class WizardStatistic(object):
             # evaluate scores
             index = np.argmax(scores)
             self.wins[i][index] = 1
+            self.scores[i] = scores
+            print("{0}: {1}".format(scores))
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self, interval=200):
-        # plot:
-        # x-Achse: gespielte Runden
-        # y-Achse: Prozent gewonnene Spiele
-        stat_num_games = np.arange(0, self.num_games, 1)
-        fig, ax = plt.subplots()
+        name_plot_wins = 'log/statistics' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_wins.png"
+        name_plot_scores = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_scores.png"
 
-        for i in range(len(self.players)):
-            won_games = self.wins[:, i]
-
-            won_stat = np.zeros(self.num_games, dtype=float)
-
-            for game in range(self.num_games):
-                if 50 <= game < interval:
-                    won_stat[game] = np.sum(won_games[50:game]) / (game - 50 + 1)
-                else:
-                    won_stat[game] = np.sum(won_games[game - interval:game]) / interval
-
-            ax.plot(stat_num_games, won_stat, color=self.plot_colors[i], label=self.get_playertype(self.players[i]))
-
-        ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games of last {} games'.format(interval))
-        ax.legend()
-        name_plot = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".png"
-        plt.savefig(name_plot)
-
-    def get_playertype(self, player):
-        if isinstance(player, RLAgent):
-            return "RLAgent"
-        if isinstance(player, AverageRandomPlayer):
-            return "AverageRandomPlayer"
-        if isinstance(player, RandomPlayer):
-            return "RandomPlayer"
+        plot_moving_average_wins(self.players, self.wins, name_plot_wins, interval=interval)
+        plot_moving_average_scores(self.players, self.scores, name_plot_scores, window_size=interval)
 
 
 if __name__ == "__main__":
@@ -68,17 +48,21 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         featurizer = Featurizer()
-        estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
+        dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
         double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size())
         tp = TrickPrediction(sess)
-
+        pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
+        max_policy = MaxPolicy(pg_estimator)
+        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator)
+        ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
+        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
         sess.run(tf.global_variables_initializer())
 
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   RLAgent(featurizer=featurizer, estimator=double_estimator)]
+                   dqn_agent]
 
-        stat = WizardStatistic(players, num_games=5000)
+        stat = WizardStatistic(players, num_games=50)
         stat.play_games()
-        stat.plot_game_statistics()
+        stat.plot_game_statistics(interval=10)

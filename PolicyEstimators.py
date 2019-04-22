@@ -12,7 +12,6 @@ class PolicyGradient(Estimator):
     n_hidden_2 = 250
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500):
-        self.logger = logging.getLogger('wizard-rl.PolicyEstimator.PolicyGradient')
         self.memory = []
         self.memory_temp = []
         self.t = 0
@@ -55,7 +54,7 @@ class PolicyGradient(Estimator):
         with tf.variable_scope("PG_Learning"):
             cross_entropy = tf.losses.sigmoid_cross_entropy(self._actions, self._logits)
             self._loss = tf.reduce_sum(tf.multiply(self._rewards, cross_entropy))
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(self._loss)
 
         sum_loss = tf.summary.scalar('loss_policy-gradient', self._loss)
         sum_hidden_w = tf.summary.histogram("hidden_out", hidden1)
@@ -87,7 +86,8 @@ class PolicyGradient(Estimator):
 
     def update_model(self):
         num_sets = len(self.memory)
-        self.logger.info("PG-Model updated with {} Rounds played".format(num_sets))
+        # self.logger.info("PG-Model updated with {} Rounds played".format(num_sets))
+        print("PG-Model updated with {} Rounds played".format(num_sets))
 
         x = np.zeros((num_sets, self.input_shape))
         y = np.zeros((num_sets, self.output_shape))
@@ -135,5 +135,5 @@ class PolicyGradient(Estimator):
         raise NotImplementedError("This method must be implemented by"
                                   "your Estimator class")
 
-    def name_to_string(self):
+    def name(self):
         return "PolicyGradient"

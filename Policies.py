@@ -1,21 +1,18 @@
 import numpy as np
 from Card import Card
+from PolicyEstimators import PolicyGradient
 
 
 class Policy(object):
 
-    def __init__(self, estimator, epsilon, decay=1):
+    def __init__(self, estimator):
         self.estimator = estimator
-        self.epsilon = epsilon
-        self.decay_rate = decay
-        # In case we need to reset epsilon.
-        self.original_epsilon = epsilon
 
-    def get_probabilities(self, x):
+    def get_action(self, x):
         raise NotImplementedError("This needs to be implemented by"
                                   "your Policy class.")
 
-    def get_playable_q(self, x):
+    def get_playable_predictions(self, x):
         """
         Returns the q values calculated by the estimator, but filtered by
         the available cards in hand.
@@ -60,13 +57,29 @@ class Policy(object):
         return playable_bool
 
 
+class MaxPolicy(Policy):
+
+    def __init__(self, estimator):
+        assert isinstance(estimator, PolicyGradient)
+        super().__init__(estimator)
+
+    def get_action(self, x):
+        q_playable = self.get_playable_predictions(x)
+        a = np.argmax(q_playable)
+        return a
+
+
 class EGreedyPolicy(Policy):
 
-    def __init__(self, estimator, epsilon):
+    def __init__(self, estimator, epsilon, decay=0.99):
+        self.epsilon = epsilon
+        self.decay_rate = decay
+        # In case we need to reset epsilon.
+        self.original_epsilon = epsilon
         self.curr_epsilon = 1 - epsilon
-        super().__init__(estimator, epsilon)
+        super().__init__(estimator)
 
-    def get_probabilities(self, x):
+    def get_action(self, x):
         """
         Returns the probabilities for each action
         Args:
@@ -82,7 +95,7 @@ class EGreedyPolicy(Policy):
         epsilon = self.curr_epsilon + self.epsilon
         num_a = Card.DIFFERENT_CARDS
         playable_bool = self.get_playable_bool(x)
-        q_playable = self.get_playable_q(x)
+        q_playable = self.get_playable_predictions(x)
 
         # All probabilities start as 0
         probs = np.zeros(num_a)
@@ -95,4 +108,5 @@ class EGreedyPolicy(Policy):
         # Give it the highest probability.
         probs[greedy_a] += (1-epsilon)
         # print(probs)
-        return probs
+        a = np.random.choice(len(probs), p=probs)
+        return a

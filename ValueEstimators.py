@@ -4,6 +4,7 @@ import random
 
 from Estimators import Estimator
 from Card import Card
+from Card import cards_to_bool_array
 
 
 class DQNEstimator(Estimator):
@@ -11,8 +12,8 @@ class DQNEstimator(Estimator):
     n_hidden_2 = 512
     n_hidden_3 = 1024
 
-    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=5000, save_update=100000):
+    def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
+                 batch_size=1024, gamma=0.95, target_update=1000, save_update=100000):
         self._session = session
         self.input_shape = input_shape
         self.output_shape = output_shape
@@ -21,6 +22,7 @@ class DQNEstimator(Estimator):
         self.batch_size = batch_size
         self.target_update = target_update
         self.update_rate = max(1, batch_size // 8)
+        self.limit_update = limit_update
         self.save_update = save_update
         self.t = 0
         self._prediction = None
@@ -106,7 +108,12 @@ class DQNEstimator(Estimator):
                 # We update the action taken ONLY.
                 if ss_prime is not None:
                     # ss_prime is not None, so this is not a terminal state.
-                    q_sa = self.predict_target(ss_prime)
+                    if self.limit_update:
+                        playable_bool = cards_to_bool_array(ss_prime[:Card.DIFFERENT_CARDS])
+                        q_sa = self.predict_target(ss_prime)
+                        q_sa = q_sa[:, playable_bool]
+                    else:
+                        q_sa = self.predict_target(ss_prime)
                     y[i, aa] = rr / 10 + self.gamma * np.max(q_sa)
                 else:
                     # ss_prime is None so this is a terminal state.
@@ -161,26 +168,6 @@ class DQNEstimator(Estimator):
         saver = tf.train.Saver()
         saver.restore(self.session, "/tmp/{}.ckpt".format(name))
 
-    def default_weights(self, n_input, n_output):
-        weights = {
-            'h1': tf.Variable(tf.random_normal([n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_3, n_output])),
-        }
-
-        return weights
-
-    def default_biases(self, n_output):
-        biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([n_output]))
-        }
-
-        return biases
-
     def print_graph(self):
         graph = tf.get_default_graph()
 
@@ -190,6 +177,9 @@ class DQNEstimator(Estimator):
             writer.close()
         print("Done printing graph")
 
+    def name(self):
+        return "DQN"
+
 
 class DoubleDQNEstimator(Estimator):
     n_hidden_1 = 256
@@ -197,7 +187,7 @@ class DoubleDQNEstimator(Estimator):
     n_hidden_3 = 1024
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=5000, save_update=100000):
+                 target_update=1000, save_update=100000):
         self._session = session
         self.input_shape = input_shape
         self.output_shape = output_shape
@@ -235,22 +225,22 @@ class DoubleDQNEstimator(Estimator):
         return prediction
 
     def _init_model(self):
-        with tf.variable_scope("Input_Data"):
+        with tf.variable_scope("DoubleDQN_Input_Data"):
             self._x = tf.placeholder("float", [None, self.input_shape], name="state")
             self._y = tf.placeholder("float", [None, self.output_shape], name="output")
 
-        self._prediction = self.dqn_network(input_size=self._x, scope_name="Q_Primary")
-        self._target = self.dqn_network(input_size=self._x, scope_name="Q_Target")
+        self._prediction = self.dqn_network(input_size=self._x, scope_name="Double_Q_Primary")
+        self._target = self.dqn_network(input_size=self._x, scope_name="Double_Q_Target")
 
-        with tf.variable_scope("Learning"):
+        with tf.variable_scope("DoubleDQN_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             # self._loss = tf.losses.huber_loss(self._y, self._prediction)
             self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
-        summary = tf.summary.scalar('loss_dqn', self._loss)
+        summary = tf.summary.scalar('loss_doubledqn', self._loss)
 
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter("log/dqn/train-summary", self._session.graph)
+        self._sum_writer = tf.summary.FileWriter("log/doubledqn/train-summary", self._session.graph)
 
     def update(self, s, a, r, s_prime):
         """
@@ -293,7 +283,7 @@ class DoubleDQNEstimator(Estimator):
                     # ss_prime is not None, so this is not a terminal state.
                     q_sa = self.predict(ss_prime)
                     idx = np.argmax(q_sa)
-                    q_target = self.predict_target(ss_prime)[idx]
+                    q_target = self.predict_target(ss_prime)[0][idx]
                     y[i, aa] = rr / 10 + self.gamma * q_target
                 else:
                     # ss_prime is None so this is a terminal state.
@@ -335,7 +325,7 @@ class DoubleDQNEstimator(Estimator):
         # hard update
         self._session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
-    def save(self, name="model-dqn"):
+    def save(self, name="model-doubledqn"):
         print("Saving {}".format(name))
         # create saver
         saver = tf.train.Saver()
@@ -344,35 +334,18 @@ class DoubleDQNEstimator(Estimator):
 
         print("Saved in path {}".format(path))
 
-    def load(self, name="model-dqn"):
+    def load(self, name="model-doubledqn"):
         saver = tf.train.Saver()
         saver.restore(self.session, "/tmp/{}.ckpt".format(name))
-
-    def default_weights(self, n_input, n_output):
-        weights = {
-            'h1': tf.Variable(tf.random_normal([n_input, self.n_hidden_1])),
-            'h2': tf.Variable(tf.random_normal([self.n_hidden_1, self.n_hidden_2])),
-            'h3': tf.Variable(tf.random_normal([self.n_hidden_2, self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([self.n_hidden_3, n_output])),
-        }
-
-        return weights
-
-    def default_biases(self, n_output):
-        biases = {
-            'b1': tf.Variable(tf.random_normal([self.n_hidden_1])),
-            'b2': tf.Variable(tf.random_normal([self.n_hidden_2])),
-            'b3': tf.Variable(tf.random_normal([self.n_hidden_3])),
-            'out': tf.Variable(tf.random_normal([n_output]))
-        }
-
-        return biases
 
     def print_graph(self):
         graph = tf.get_default_graph()
 
         with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
+            writer = tf.summary.FileWriter("log/doubledqn/graph", sess.graph)
             # sess.run(self._prediction, feed_dict)
             writer.close()
         print("Done printing graph")
+
+    def name(self):
+        return "Double DQN"
