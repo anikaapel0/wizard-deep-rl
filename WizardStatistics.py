@@ -32,15 +32,15 @@ class WizardStatistic(object):
             index = np.argmax(scores)
             self.wins[i][index] = 1
             self.scores[i] = scores
-            print("{0}: {1}".format(scores))
+            print("{0}: {1}".format(i, scores))
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self, interval=200):
-        name_plot_wins = 'log/statistics' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_wins.png"
+        name_plot_wins = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_wins.png"
         name_plot_scores = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_scores.png"
 
-        plot_moving_average_wins(self.players, self.wins, name_plot_wins, interval=interval)
-        plot_moving_average_scores(self.players, self.scores, name_plot_scores, window_size=interval)
+        plot_moving_average_wins(self.players, self.wins, self.scores, name_plot_wins, interval=interval)
+        # plot_moving_average_scores(self.players, self.scores, name_plot_scores, window_size=interval)
 
 
 if __name__ == "__main__":
