@@ -1,7 +1,7 @@
 from RLAgents import RLAgent
 from Player import AverageRandomPlayer
 from Wizard import Wizard
-from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator
+from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator, DuelingDQNEstimator
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
 from Policies import MaxPolicy
@@ -44,11 +44,13 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         featurizer = Featurizer()
+        dueling_dqn = DuelingDQNEstimator(sess, input_shape=featurizer.get_state_size())
         dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
         double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size())
         tp = TrickPrediction(sess)
         pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
         max_policy = MaxPolicy(pg_estimator)
+        dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn)
         dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator)
         ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
         pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
@@ -57,7 +59,7 @@ if __name__ == "__main__":
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dqn_agent]
+                   dueling_agent]
 
         stat = WizardStatistic(players, num_games=1000)
         stat.play_games()

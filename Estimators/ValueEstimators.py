@@ -332,7 +332,7 @@ class DuelingDQNEstimator(ValueEstimator):
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
                  gamma=0.95):
-        super(DQNEstimator, self).__init__(session, input_shape, output_shape, memory, batch_size, False)
+        super(DuelingDQNEstimator, self).__init__(session, input_shape, output_shape, memory, batch_size, False)
 
         self.gamma = gamma
         self.t_train = 0
@@ -362,9 +362,9 @@ class DuelingDQNEstimator(ValueEstimator):
             hidden2_a = tf.layers.dense(hidden1_a, self.n_hidden_2)
 
             out_a = tf.layers.dense(hidden2_a, self.output_shape)
-            out_a_reduced = tf.reduce_mean(out_a, axis=1)
+            mean = tf.reduce_mean(out_a, axis=1)
 
-            self.q_values = tf.math.add(out_a_reduced, out_v)
+            self.q_values = out_a + out_v - mean
 
         with tf.variable_scope("DuelingDQN_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self.q_values)
@@ -417,7 +417,7 @@ class DuelingDQNEstimator(ValueEstimator):
         pass
 
     def predict(self, s):
-        feed_dict = {self._x: np.array(s)[np.newaxis, :]}
+        feed_dict = {self._state: np.array(s)[np.newaxis, :]}
         return self.session.run(self.q_values, feed_dict)
 
     def name(self):
