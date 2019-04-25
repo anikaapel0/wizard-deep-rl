@@ -1,6 +1,6 @@
-from Game import Game
-from Player import RandomPlayer, AverageRandomPlayer
-from Card import Card
+from GameUtilities.Game import Game
+from Player import AverageRandomPlayer
+from GameUtilities.Card import Card
 from Featurizers import Featurizer
 
 from random import seed, getstate, choice

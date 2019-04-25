@@ -1,5 +1,5 @@
 import numpy as np
-from Card import Card
+from GameUtilities.Card import Card
 from Estimators.PolicyEstimators import PolicyGradient
 
 

@@ -1,5 +1,5 @@
-from Card import Deck, Card
-from Trick import Trick
+from GameUtilities.Card import Deck, Card
+from GameUtilities.Trick import Trick
 from copy import deepcopy
 
 

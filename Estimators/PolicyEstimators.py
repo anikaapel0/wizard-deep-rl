@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from Estimators.Estimators import Estimator
-from Card import Card
+from GameUtilities.Card import Card
 
 
 class PolicyGradient(Estimator):

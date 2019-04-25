@@ -1,4 +1,4 @@
-from Card import Card, is_new_winner
+from GameUtilities.Card import is_new_winner
 
 
 class Trick(object):

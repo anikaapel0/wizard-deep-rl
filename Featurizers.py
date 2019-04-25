@@ -1,4 +1,4 @@
-import Card
+from GameUtilities import Card
 import random
 from copy import deepcopy
 

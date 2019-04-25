@@ -1,6 +1,6 @@
 from RLAgents import RLAgent
 from Player import AverageRandomPlayer
-from Wizard import Wizard
+from GameUtilities.Wizard import Wizard
 from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator, DuelingDQNEstimator
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
@@ -61,6 +61,6 @@ if __name__ == "__main__":
                    AverageRandomPlayer(),
                    dueling_agent]
 
-        stat = WizardStatistic(players, num_games=1000)
+        stat = WizardStatistic(players, num_games=5000)
         stat.play_games()
-        stat.plot_game_statistics(interval=200)
+        stat.plot_game_statistics(interval=500)

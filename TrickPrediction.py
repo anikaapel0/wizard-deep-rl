@@ -2,10 +2,6 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from Player import AverageRandomPlayer
-from Card import Card
-from Wizard import Wizard
-
 
 class TrickPrediction(object):
     n_hidden_1 = 40

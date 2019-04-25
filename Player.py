@@ -1,6 +1,6 @@
 from random import shuffle, randrange, choice, random
 from collections import Counter
-import Card
+from GameUtilities import Card
 
 
 class Player(object):
