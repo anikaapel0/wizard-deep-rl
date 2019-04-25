@@ -28,8 +28,7 @@ class WizardStatistic(object):
             wiz = Wizard(num_players=self.num_players, players=self.players)
             scores = wiz.play()
             # evaluate scores
-            index = np.argmax(scores)
-            self.wins[i][index] = 1
+            self.wins[i][scores == np.max(scores)] = 1
             self.scores[i] = scores
             print("{0}: {1}".format(i, scores))
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
@@ -50,7 +49,7 @@ if __name__ == "__main__":
         tp = TrickPrediction(sess)
         pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
         max_policy = MaxPolicy(pg_estimator)
-        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
+        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator)
         ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
         pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
         sess.run(tf.global_variables_initializer())
@@ -60,6 +59,6 @@ if __name__ == "__main__":
                    AverageRandomPlayer(),
                    dqn_agent]
 
-        stat = WizardStatistic(players, num_games=50)
+        stat = WizardStatistic(players, num_games=1000)
         stat.play_games()
-        stat.plot_game_statistics(interval=10)
+        stat.plot_game_statistics(interval=200)
