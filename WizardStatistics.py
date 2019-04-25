@@ -7,11 +7,10 @@ from TrickPrediction import TrickPrediction
 from Policies import MaxPolicy
 from PolicyEstimators import PolicyGradient
 
-from plotting import plot_moving_average_scores, plot_moving_average_wins
+from plotting import plot_moving_average_wins
 
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
@@ -36,11 +35,9 @@ class WizardStatistic(object):
             print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self, interval=200):
-        name_plot_wins = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_wins.png"
-        name_plot_scores = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S") + "_scores.png"
+        path_name = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S")
 
-        plot_moving_average_wins(self.players, self.wins, self.scores, name_plot_wins, interval=interval)
-        # plot_moving_average_scores(self.players, self.scores, name_plot_scores, window_size=interval)
+        plot_moving_average_wins(self.players, self.wins, self.scores, path_name, interval=interval)
 
 
 if __name__ == "__main__":
@@ -53,7 +50,7 @@ if __name__ == "__main__":
         tp = TrickPrediction(sess)
         pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
         max_policy = MaxPolicy(pg_estimator)
-        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator)
+        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
         ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
         pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
         sess.run(tf.global_variables_initializer())
