@@ -42,7 +42,7 @@ class TrickPrediction(object):
 
         with tf.variable_scope("TP_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
 

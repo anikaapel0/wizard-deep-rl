@@ -1,10 +1,8 @@
-import ValueEstimators
-import PolicyEstimators
+from Estimators import ValueEstimators
+from Estimators.PolicyEstimators import PolicyGradient
 import Policies
 import Featurizers
-from Player import Player, RandomPlayer, AverageRandomPlayer
-from copy import deepcopy
-import numpy as np
+from Player import AverageRandomPlayer
 
 
 class RLAgent(AverageRandomPlayer):

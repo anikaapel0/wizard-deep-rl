@@ -1,9 +1,7 @@
-import logging
-
 import numpy as np
 import tensorflow as tf
 
-from Estimators import Estimator
+from Estimators.Estimators import Estimator
 from Card import Card
 
 

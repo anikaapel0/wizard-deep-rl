@@ -1,6 +1,6 @@
 import numpy as np
 from Card import Card
-from PolicyEstimators import PolicyGradient
+from Estimators.PolicyEstimators import PolicyGradient
 
 
 class Policy(object):

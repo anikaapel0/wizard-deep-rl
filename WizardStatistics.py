@@ -1,11 +1,11 @@
 from RLAgents import RLAgent
-from Player import RandomPlayer, AverageRandomPlayer
+from Player import AverageRandomPlayer
 from Wizard import Wizard
-from ValueEstimators import DQNEstimator, DoubleDQNEstimator
+from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
 from Policies import MaxPolicy
-from PolicyEstimators import PolicyGradient
+from Estimators.PolicyEstimators import PolicyGradient
 
 from plotting import plot_moving_average_wins
 

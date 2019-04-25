@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from Estimators import Estimator
+from Estimators.Estimators import Estimator
 from Card import Card
 from Card import cards_to_bool_array
 
@@ -35,7 +35,6 @@ class DQNEstimator(Estimator):
         self._sum_writer = None
         self._merged = None
         self._init_model()
-        self.print_graph()
 
     def dqn_network(self, input_size, scope_name, act=tf.nn.relu):
 
@@ -167,15 +166,6 @@ class DQNEstimator(Estimator):
     def load(self, name="model-dqn"):
         saver = tf.train.Saver()
         saver.restore(self.session, "/tmp/{}.ckpt".format(name))
-
-    def print_graph(self):
-        graph = tf.get_default_graph()
-
-        with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/dqn/graph", sess.graph)
-            # sess.run(self._prediction, feed_dict)
-            writer.close()
-        print("Done printing graph")
 
     def name(self):
         return "DQN"
@@ -349,3 +339,57 @@ class DoubleDQNEstimator(Estimator):
 
     def name(self):
         return "Double DQN"
+
+
+class DuelingDQNEstimator(Estimator):
+    n_hidden_1 = 256
+    n_hidden_2 = 512
+
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95):
+        self.session = session
+        self.input_shape = input_shape
+        self.output_shape = output_shape
+        self.gamma = gamma
+        self.memory = [([], 0, 0, [])] * memory
+        self.batch_size = batch_size
+        self.update_rate = max(1, batch_size // 8)
+        self.t = 0
+        self.t_train = 0
+
+        self._state = None
+        self._y = None
+        self.q_values = None
+
+        self._optimizer = None
+        self._merged = None
+        self._sum_writer = None
+
+        self._init_model()
+
+    def _init_model(self):
+        with tf.variable_scope("DuelingDQN_Input"):
+            self._state = tf.placeholder("float", [None, self.input_shape], name="State")
+            self._y = tf.placeholder("float",  [None, self.output_shape], name="Q-Values")
+
+        with tf.variable_scope("Dueling_Network"):
+            hidden1_v = tf.layers.dense(self._state, self.n_hidden_1)
+            hidden2_v = tf.layers.dense(hidden1_v, self.n_hidden_2)
+
+            out_v = tf.layers.dense(hidden2_v, 1)
+
+            hidden1_a = tf.layers.dense(self._state, self.n_hidden_1)
+            hidden2_a = tf.layers.dense(self._state, self.n_hidden_2)
+
+            out_a = tf.layers.dense(hidden2_a, self.output_shape)
+            out_a_reduced = tf.reduce_mean(out_a, axis=1)
+
+            self.q_values = tf.math.add(out_a_reduced, out_v)
+
+        with tf.variable_scope("DuelingDQN_Learning"):
+            self._loss = tf.losses.mean_squared_error(self._y, self.q_values)
+            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+
+        summary = tf.summary.scalar('loss_dueling', self._loss)
+        self._merged = tf.summary.merge([summary])
+        self._sum_writer = tf.summary.FileWriter("log/dueling/train-summary", self.session.graph)
+
