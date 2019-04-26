@@ -21,7 +21,7 @@ class ValueEstimator(Estimator):
         self.use_target = target
         self.batch_size = batch_size
         self.update_rate = max(1, batch_size // 8)
-        self.saver = tf.train.saver()
+        self.saver = None
         self.path = path
 
     def update(self, s, a, r, s_prime):
@@ -67,7 +67,7 @@ class DQNEstimator(ValueEstimator):
     n_hidden_3 = 1024
 
     def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
-                 batch_size=1024, gamma=0.95, target_update=1000, save_update=100000, path="log/dqn"):
+                 batch_size=1024, gamma=0.95, target_update=1000, save_update=5000, path="log/dqn"):
         super(DQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
         self.gamma = gamma
         self.limit_update = limit_update
@@ -114,6 +114,9 @@ class DQNEstimator(ValueEstimator):
 
         self._merged = tf.summary.merge([summary])
         self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+
+        self.saver = tf.train.Saver
+        # self.saver = tf.train.Saver({'Q_Primary': self._prediction, 'Q_Target': self._target})
 
     def update_from_experience(self):
         # Randomly sample from experience
@@ -180,8 +183,7 @@ class DQNEstimator(ValueEstimator):
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
     def load(self, name="model-dqn"):
-        saver = tf.train.Saver()
-        saver.restore(self.session, "/tmp/{}.ckpt".format(name))
+        self.saver.restore(self.session, self.path + "/models/model.ckpt")
 
     def name(self):
         return "DQN"
@@ -193,7 +195,7 @@ class DoubleDQNEstimator(ValueEstimator):
     n_hidden_3 = 1024
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=1000, save_update=100000, path="log/doubledqn/"):
+                 target_update=1000, save_update=5000, path="log/doubledqn/"):
         super(DoubleDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
 
         self.gamma = gamma
@@ -241,6 +243,9 @@ class DoubleDQNEstimator(ValueEstimator):
 
         self._merged = tf.summary.merge([summary])
         self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+
+        self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver({'Double_Q_Primary': self._prediction, 'Double_Q_Target': self._target})
 
     def update_from_experience(self):
         # Randomly sample from experience
@@ -304,14 +309,13 @@ class DoubleDQNEstimator(ValueEstimator):
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
     def load(self, name="model-doubledqn"):
-        saver = tf.train.Saver()
-        saver.restore(self.session, "/tmp/{}.ckpt".format(name))
+        save_path = self.saver.restore(self.session, self.path + "/models/model.ckpt")
 
     def print_graph(self):
         graph = tf.get_default_graph()
 
         with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/doubledqn/graph", sess.graph)
+            writer = tf.summary.FileWriter(self.path + "/graph", sess.graph)
             # sess.run(self._prediction, feed_dict)
             writer.close()
         print("Done printing graph")
@@ -325,7 +329,7 @@ class DuelingDQNEstimator(ValueEstimator):
     n_hidden_2 = 512
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
-                 gamma=0.95, path="log/dueling", save_update=50000):
+                 gamma=0.95, path="log/dueling", save_update=5000):
         super(DuelingDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, False)
 
         self.gamma = gamma
@@ -370,6 +374,9 @@ class DuelingDQNEstimator(ValueEstimator):
         summary = tf.summary.scalar('loss_dueling', self._loss)
         self._merged = tf.summary.merge([summary])
         self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+
+        self.saver = tf.train.Saver()
+        # self.saver = tf.train.Saver({'q-values-dueling':self.q_values})
 
     def update_from_experience(self):
         minibatch = random.sample(self.memory, self.batch_size)
@@ -422,4 +429,8 @@ class DuelingDQNEstimator(ValueEstimator):
 
     def name(self):
         return "Dueling DQN"
+
+    def load(self):
+        self.saver.restore(self.session, self.path + "/models/model.ckpt")
+
 

@@ -61,6 +61,6 @@ if __name__ == "__main__":
                    AverageRandomPlayer(),
                    dueling_agent]
 
-        stat = WizardStatistic(players, num_games=5000)
+        stat = WizardStatistic(players, num_games=2500)
         stat.play_games()
-        stat.plot_game_statistics(interval=500)
+        stat.plot_game_statistics(interval=200)
