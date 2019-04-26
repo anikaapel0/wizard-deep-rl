@@ -1,10 +1,10 @@
-import ValueEstimators
-import PolicyEstimators
+from Estimators import ValueEstimators
+from Estimators.PolicyEstimators import PolicyGradient
 import Policies
 import Featurizers
-from Player import Player, RandomPlayer, AverageRandomPlayer
-from copy import deepcopy
-import numpy as np
+from Player import AverageRandomPlayer
+
+import logging
 
 
 class RLAgent(AverageRandomPlayer):
@@ -12,6 +12,7 @@ class RLAgent(AverageRandomPlayer):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
         super().__init__()
+        self.logger = logging.getLogger('RLAgent')
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
         else:
@@ -47,7 +48,7 @@ class RLAgent(AverageRandomPlayer):
                 final_pred -= 1
             else:
                 final_pred += 1
-        print("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
 
         return final_pred
 
@@ -158,8 +159,8 @@ class PGAgent(RLAgent):
             policy = Policies.MaxPolicy(featurizer)
         if estimator is None:
             assert session is not None
-            estimator = PolicyEstimators.PolicyGradient(session, featurizer.get_state_size())
+            estimator = PolicyGradient(session, featurizer.get_state_size())
         else:
-            assert isinstance(estimator, PolicyEstimators.PolicyGradient)
+            assert isinstance(estimator, PolicyGradient)
 
         super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)

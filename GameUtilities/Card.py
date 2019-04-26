@@ -1,6 +1,7 @@
 from random import shuffle
 
 import numpy as np
+import logging
 
 
 class Card(object):

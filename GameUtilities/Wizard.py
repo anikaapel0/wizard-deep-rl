@@ -1,10 +1,11 @@
-from Game import Game
-from Player import RandomPlayer, AverageRandomPlayer
-from Card import Card
+from GameUtilities.Game import Game
+from Player import AverageRandomPlayer
+from GameUtilities.Card import Card
 from Featurizers import Featurizer
 
 from random import seed, getstate, choice
 import numpy as np
+import logging
 
 
 class Wizard(object):
@@ -14,6 +15,8 @@ class Wizard(object):
     NUM_CARDS = 60
 
     def __init__(self, num_players=4, players=None, track_tricks=False):
+        self.logger = logging.getLogger('Wizard')
+
         self.players = []
         if players is None:
             assert num_players >= 3, "Not enough players!" \
@@ -22,7 +25,7 @@ class Wizard(object):
 
             for player in range(num_players):
                 # Initialize all players
-                # print("Creating players.")
+                # self.logger.info("Creating players.")
                 self.players.append(AverageRandomPlayer())
         else:
             self.players = players
@@ -44,7 +47,7 @@ class Wizard(object):
             list: The scores for each player.
 
         """
-        # print("Playing a Wizard game!")
+        # self.logger.info("Playing a Wizard game!")
         for game_num in range(1, self.games_to_play+1):
             game = Game(game_num, self.players, self.random_start)
             score = game.play()
@@ -57,8 +60,8 @@ class Wizard(object):
                     curr_idx = self.num_players * (game_num - 1) + i
                     self.history[1][curr_idx] = player.wins
                     self.history[0][curr_idx] = self.featurizer.transform_handcards(player, game.trump_card)
-            # print("Scores: {}".format(self.scores))
-        # print("Final scores: {}".format(self.scores))
+            # self.logger.info("Scores: {}".format(self.scores))
+        # self.logger.info("Final scores: {}".format(self.scores))
         for player in self.players:
             player.reset_score()
         return self.scores

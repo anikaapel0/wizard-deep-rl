@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import logging
 
 from Player import AverageRandomPlayer, RandomPlayer
 from RLAgents import RLAgent
 
 plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
+logger = logging.getLogger('plotting')
 
 
 def moving_average(interval, window_size, name = None):
@@ -25,22 +27,17 @@ def plot_moving_average_wins(players, wins, scores, name, interval=25):
     mvg_scores = moving_average(wins, interval, name + "_scores.csv")
     moving_avg = moving_average(scores, interval, name + "_wins.csv")
 
-    plt.figure(1)
-    plt.subplot(211)
+    f, (ax1, ax2) = plt.subplots(2, figsize=(20, 10))
 
     for i in range(len(players)):
-        plt.plot(mvg_scores[:, i], color=plot_colors[i], label=get_playertype(players[i]))
-    # ax.set(xlabel='Number of rounds played', ylabel='Percentage of won games of last {} games'.format(interval))
-    plt.xlabel = 'Number of rounds played'
-    plt.ylabel = 'Moving average of wins (window = {})'.format(interval)
+        ax1.plot(mvg_scores[:, i], color=plot_colors[i], label=get_playertype(players[i]))
+    ax1.legend()
+    ax1.set(xlabel='Number of rounds played', ylabel='Moving average of wins (window = {})'.format(interval))
 
-    plt.subplot(212)
     for i in range(len(players)):
-        plt.plot(moving_avg[:, i], color=plot_colors[i], label=get_playertype(players[i]))
-    plt.xlabel = 'Number of rounds played'
-    plt.ylabel = 'Moving average of scores (window = {})'.format(interval)
-
-
+        ax2.plot(moving_avg[:, i], color=plot_colors[i], label=get_playertype(players[i]))
+    ax2.set(xlabel='Number of rounds played', ylabel='Moving average of scores (window = {})'.format(interval))
+    ax2.legend()
     # plt.show()
     plt.savefig(name + "_plot.png")
 

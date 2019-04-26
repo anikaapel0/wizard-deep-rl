@@ -1,7 +1,4 @@
-import random
-import numpy as np
 import tensorflow as tf
-from Card import Card
 
 
 class Estimator(object):
@@ -21,7 +18,7 @@ class Estimator(object):
         raise NotImplementedError("This method must be implemented by"
                                   "your Estimator class")
 
-    def save(self, name):
+    def save(self):
         raise NotImplementedError("This method must be implemented by"
                                   "your Estimator class")
 

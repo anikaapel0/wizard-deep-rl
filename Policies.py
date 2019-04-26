@@ -1,11 +1,14 @@
 import numpy as np
-from Card import Card
-from PolicyEstimators import PolicyGradient
+from GameUtilities.Card import Card
+from Estimators.PolicyEstimators import PolicyGradient
+import logging
 
 
 class Policy(object):
 
     def __init__(self, estimator):
+        self.logger = logging.getLogger('Policy')
+
         self.estimator = estimator
 
     def get_action(self, x):
@@ -61,6 +64,8 @@ class MaxPolicy(Policy):
 
     def __init__(self, estimator):
         assert isinstance(estimator, PolicyGradient)
+        self.logger = logging.getLogger('MaxPolicy')
+
         super().__init__(estimator)
 
     def get_action(self, x):
@@ -72,12 +77,14 @@ class MaxPolicy(Policy):
 class EGreedyPolicy(Policy):
 
     def __init__(self, estimator, epsilon, decay=0.99):
+        super().__init__(estimator)
+        self.logger = logging.getLogger('EGreedyPolicy')
+
         self.epsilon = epsilon
         self.decay_rate = decay
         # In case we need to reset epsilon.
         self.original_epsilon = epsilon
         self.curr_epsilon = 1 - epsilon
-        super().__init__(estimator)
 
     def get_action(self, x):
         """
@@ -102,11 +109,11 @@ class EGreedyPolicy(Policy):
         # Only potential actions are the playable ones.
         # assign epsilon probabilities to every potential action.
         probs[playable_bool] += epsilon/sum(playable_bool)
-        # print(q_playable)
+        # self.logger.info(q_playable)
         # Find the greedy action
         greedy_a = np.argmax(q_playable)
         # Give it the highest probability.
         probs[greedy_a] += (1-epsilon)
-        # print(probs)
+        # self.logger.info(probs)
         a = np.random.choice(len(probs), p=probs)
         return a

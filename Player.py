@@ -1,11 +1,15 @@
 from random import shuffle, randrange, choice, random
 from collections import Counter
-import Card
+import logging
+
+from GameUtilities import Card
 
 
 class Player(object):
 
     def __init__(self):
+        self.logger = logging.getLogger('Player')
+
         self.hand = []
         self.score = 0
         self.reward = 0
@@ -75,7 +79,7 @@ class RandomPlayer(Player):
         shuffle(possible_actions)
         card_to_play = possible_actions[0]
         self.hand.remove(card_to_play)
-        # print("Playing card {} from {}".format(card_to_play, self.hand))
+        # self.logger.info("Playing card {} from {}".format(card_to_play, self.hand))
         return card_to_play
 
     def get_prediction(self, trump, predictions, players, restriction=None):

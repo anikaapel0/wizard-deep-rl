@@ -1,16 +1,14 @@
 import tensorflow as tf
 import numpy as np
 import random
-
-from Player import AverageRandomPlayer
-from Card import Card
-from Wizard import Wizard
+import logging
 
 
 class TrickPrediction(object):
     n_hidden_1 = 40
 
     def __init__(self, session, input_shape=59, memory=1000, batch_size=50, gamma=0.95):
+        self.logger = logging.getLogger('TrickPrediction')
         self.input_shape = input_shape
         self.output_shape = 1
         self.gamma = gamma
@@ -42,7 +40,7 @@ class TrickPrediction(object):
 
         with tf.variable_scope("TP_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
 
@@ -87,7 +85,7 @@ class TrickPrediction(object):
 
     def train_model(self, batch_x, batch_y):
         self.t_train += 1
-        print("TRAINING TRICK PREDICTION no. {}".format(self.t_train))
+        self.logger.info("TRAINING TRICK PREDICTION no. {}".format(self.t_train))
 
         feed_dict = {
             self._x: batch_x,
