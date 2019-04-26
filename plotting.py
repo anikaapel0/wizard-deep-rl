@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import logging
 
 from Player import AverageRandomPlayer, RandomPlayer
 from RLAgents import RLAgent
 
 plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
+logger = logging.getLogger('plotting')
 
 
 def moving_average(interval, window_size, name = None):

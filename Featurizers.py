@@ -1,6 +1,7 @@
 from GameUtilities import Card
 import random
 from copy import deepcopy
+import logging
 
 
 class Featurizer(object):
@@ -8,6 +9,8 @@ class Featurizer(object):
     and transforms it into an array that is useful for an estimator."""
 
     def __init__(self, count_cards=True):
+        self.logger = logging.getLogger('Featurizer')
+
         self.count_cards = count_cards
 
     def transform_handcards(self, player, trump):

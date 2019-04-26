@@ -1,8 +1,11 @@
 from GameUtilities.Card import is_new_winner
+import logging
 
 
 class Trick(object):
     def __init__(self, trump_card, players, first_player, played_cards_in_game):
+        self.logger = logging.getLogger('Tricks')
+
         self.trump_card = trump_card
         self.players = players
         self.first_player = first_player
@@ -27,7 +30,7 @@ class Trick(object):
                                                self.trump_card,
                                                self.first_card):
                 winner = (played_card, player_index)
-            """print("First card: {}\nTrump card: {}\nWinning: {}".format(self.first_card,
+            """self.logger.info("First card: {}\nTrump card: {}\nWinning: {}".format(self.first_card,
                                                                        self.trump_card,
                                                                        winner))"""
         return winner[1], trick_cards

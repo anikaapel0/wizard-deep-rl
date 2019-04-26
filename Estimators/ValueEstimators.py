@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import random
+import logging
 
 from Estimators.Estimators import Estimator
 from GameUtilities.Card import Card
@@ -58,7 +59,7 @@ class ValueEstimator(Estimator):
 
     def save(self):
         save_path = self.saver.save(self.session, self.path + "/models/model.ckpt")
-        print("{}: Model saved in {}".format(self.name(), save_path))
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
 
 
 class DQNEstimator(ValueEstimator):
@@ -69,6 +70,7 @@ class DQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
                  batch_size=1024, gamma=0.95, target_update=1000, save_update=5000, path="log/dqn"):
         super(DQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
+        self.logger = logging.getLogger('DQNEstimator')
         self.gamma = gamma
         self.limit_update = limit_update
         self.save_update = save_update
@@ -197,7 +199,7 @@ class DoubleDQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
                  target_update=1000, save_update=5000, path="log/doubledqn/"):
         super(DoubleDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
-
+        self.logger = logging.getLogger('DoubleDQNEstimator')
         self.gamma = gamma
         self.update_rate = max(1, batch_size // 8)
         self.save_update = save_update
@@ -318,7 +320,7 @@ class DoubleDQNEstimator(ValueEstimator):
             writer = tf.summary.FileWriter(self.path + "/graph", sess.graph)
             # sess.run(self._prediction, feed_dict)
             writer.close()
-        print("Done printing graph")
+        self.logger.info("Done printing graph")
 
     def name(self):
         return "Double DQN"
@@ -331,6 +333,7 @@ class DuelingDQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
                  gamma=0.95, path="log/dueling", save_update=5000):
         super(DuelingDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, False)
+        self.logger = logging.getLogger('DuelingDQNEstimator')
 
         self.gamma = gamma
         self.save_update = save_update

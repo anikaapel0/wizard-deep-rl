@@ -1,6 +1,7 @@
 from GameUtilities.Card import Deck, Card
 from GameUtilities.Trick import Trick
 from copy import deepcopy
+import logging
 
 
 class Game(object):
@@ -8,6 +9,8 @@ class Game(object):
     on the outcome of the tricks and the predictions."""
 
     def __init__(self, game_num, players, random_start):
+        self.logger = logging.getLogger('Game')
+
         self.game_num = game_num
         self.players = players
         self.deck = Deck()
@@ -18,7 +21,7 @@ class Game(object):
         self.played_cards = []
 
     def play(self):
-        # print("Playing game #{}".format(self.game_num))
+        # self.logger.info("Playing game #{}".format(self.game_num))
         # New game, new deck. No played cards.
         self.played_cards = []
         self.trump_card = self.distribute_cards()[0]
@@ -33,7 +36,7 @@ class Game(object):
                 self.players[self.first_player].get_trump_color()
         # Now that each player has a hand, ask for predictions.
         self.ask_for_predictions()
-        # print("Final predictions {}".format(self.predictions))
+        # self.logger.info("Final predictions {}".format(self.predictions))
         # Reset all wins.
         wins = [0]*len(self.players)
         for i in range(len(self.players)):
@@ -52,7 +55,7 @@ class Game(object):
             # Update wins
             for i in range(len(self.players)):
                 self.players[i].wins = wins[i]
-            # print("{} won the game!".format(winner))
+            # self.logger.info("{} won the game!".format(winner))
 
         for i in range(len(self.players)):
             # inform players about results of game round
@@ -92,7 +95,7 @@ class Game(object):
                                                restriction)
             self.predictions[current_player_index] = prediction
             all_predictions += prediction
-            """print("Player {} predicted {}".format(current_player_index,
+            """self.logger.info("Player {} predicted {}".format(current_player_index,
                                                   prediction))"""
 
     def get_scores(self, wins):

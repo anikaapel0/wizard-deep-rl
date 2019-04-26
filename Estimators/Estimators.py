@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 class Estimator(object):
     """
     An state-action value function estimator. All state inputs must already

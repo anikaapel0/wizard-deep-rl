@@ -9,6 +9,7 @@ from Estimators.PolicyEstimators import PolicyGradient
 
 from plotting import plot_moving_average_wins
 
+import logging
 import time
 import numpy as np
 import tensorflow as tf
@@ -17,6 +18,7 @@ import tensorflow as tf
 class WizardStatistic(object):
 
     def __init__(self, players, num_games=20):
+        self.logger = logging.getLogger('WizardStatistic')
         self.num_games = num_games
         self.num_players = len(players)
         self.wins = np.zeros((num_games, len(players)))
@@ -30,8 +32,8 @@ class WizardStatistic(object):
             # evaluate scores
             self.wins[i][scores == np.max(scores)] = 1
             self.scores[i] = scores
-            print("{0}: {1}".format(i, scores))
-            print("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
+            self.logger.info("{0}: {1}".format(i, scores))
+            self.logger.info("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self, interval=200):
         path_name = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -39,8 +41,31 @@ class WizardStatistic(object):
         plot_moving_average_wins(self.players, self.wins, self.scores, path_name, interval=interval)
 
 
+def init_logger(console_logging=False):
+    # create logger with 'wizard-rl'
+    logger = logging.getLogger('wizard-rl')
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs debug messages
+    fh = logging.FileHandler('log/wizard-rl.log')
+    fh.setLevel(logging.DEBUG)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+
+    # add handlers to logger
+    logger.addHandler(fh)
+
+    if console_logging:
+        # create console handler with higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.ERROR)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+
 if __name__ == "__main__":
     tf.reset_default_graph()
+    init_logger()
 
     with tf.Session() as sess:
         featurizer = Featurizer()
@@ -59,8 +84,8 @@ if __name__ == "__main__":
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dueling_agent]
+                   dqn_agent]
 
-        stat = WizardStatistic(players, num_games=2500)
+        stat = WizardStatistic(players, num_games=10000)
         stat.play_games()
-        stat.plot_game_statistics(interval=200)
+        stat.plot_game_statistics(interval=500)
