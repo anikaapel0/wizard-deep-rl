@@ -10,7 +10,7 @@ plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 logger = logging.getLogger('plotting')
 
 
-def moving_average(interval, window_size, name = None):
+def moving_average(interval, window_size, name=None):
     data = pd.DataFrame(interval)
     if name is not None:
         data.to_csv(name, sep=";")
@@ -22,8 +22,7 @@ def plot_moving_average_wins(players, wins, scores, name, interval=25):
     # plot:
     # x-Achse: gespielte Runden
     # y-Achse: Prozent gewonnene Spiele
-    num_games = wins.shape[0]
-    stat_num_games = np.arange(0, num_games, 1)
+
     mvg_scores = moving_average(wins, interval, name + "_scores.csv")
     moving_avg = moving_average(scores, interval, name + "_wins.csv")
 

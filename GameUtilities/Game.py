@@ -9,7 +9,7 @@ class Game(object):
     on the outcome of the tricks and the predictions."""
 
     def __init__(self, game_num, players, random_start):
-        self.logger = logging.getLogger('Game')
+        self.logger = logging.getLogger('wizard-rl.Game')
 
         self.game_num = game_num
         self.players = players

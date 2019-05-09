@@ -11,7 +11,7 @@ class PolicyGradient(Estimator):
     n_hidden_2 = 250
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500):
-        self.logger = logging.getLogger('PolicyGradient')
+        self.logger = logging.getLogger('wizard-rl.PolicyGradient')
         self.memory = []
         self.memory_temp = []
         self.t = 0

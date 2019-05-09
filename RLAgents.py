@@ -12,7 +12,7 @@ class RLAgent(AverageRandomPlayer):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
         super().__init__()
-        self.logger = logging.getLogger('RLAgent')
+        self.logger = logging.getLogger('wizard-rl.RLAgent')
         if featurizer is None:
             self.featurizer = Featurizers.Featurizer()
         else:

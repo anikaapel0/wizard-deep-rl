@@ -15,7 +15,7 @@ class Wizard(object):
     NUM_CARDS = 60
 
     def __init__(self, num_players=4, players=None, track_tricks=False):
-        self.logger = logging.getLogger('Wizard')
+        self.logger = logging.getLogger('wizard-rl.Wizard')
 
         self.players = []
         if players is None:

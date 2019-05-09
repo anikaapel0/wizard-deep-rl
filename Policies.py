@@ -7,7 +7,7 @@ import logging
 class Policy(object):
 
     def __init__(self, estimator):
-        self.logger = logging.getLogger('Policy')
+        self.logger = logging.getLogger('wizard-rl.Policy')
 
         self.estimator = estimator
 
@@ -64,7 +64,7 @@ class MaxPolicy(Policy):
 
     def __init__(self, estimator):
         assert isinstance(estimator, PolicyGradient)
-        self.logger = logging.getLogger('MaxPolicy')
+        self.logger = logging.getLogger('wizard-rl.MaxPolicy')
 
         super().__init__(estimator)
 
@@ -78,7 +78,7 @@ class EGreedyPolicy(Policy):
 
     def __init__(self, estimator, epsilon, decay=0.99):
         super().__init__(estimator)
-        self.logger = logging.getLogger('EGreedyPolicy')
+        self.logger = logging.getLogger('wizard-rl.EGreedyPolicy')
 
         self.epsilon = epsilon
         self.decay_rate = decay

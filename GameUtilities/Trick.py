@@ -4,7 +4,7 @@ import logging
 
 class Trick(object):
     def __init__(self, trump_card, players, first_player, played_cards_in_game):
-        self.logger = logging.getLogger('Tricks')
+        self.logger = logging.getLogger('wizard-rl.Trick')
 
         self.trump_card = trump_card
         self.players = players

@@ -8,7 +8,7 @@ from GameUtilities import Card
 class Player(object):
 
     def __init__(self):
-        self.logger = logging.getLogger('Player')
+        self.logger = logging.getLogger('wizard-rl.Player')
 
         self.hand = []
         self.score = 0

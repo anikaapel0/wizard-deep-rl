@@ -11,6 +11,7 @@ from plotting import plot_moving_average_wins
 
 import logging
 import time
+import os
 import numpy as np
 import tensorflow as tf
 
@@ -18,7 +19,7 @@ import tensorflow as tf
 class WizardStatistic(object):
 
     def __init__(self, players, num_games=20):
-        self.logger = logging.getLogger('WizardStatistic')
+        self.logger = logging.getLogger('wizard-rl.WizardStatistics.WizardStatistic')
         self.num_games = num_games
         self.num_players = len(players)
         self.wins = np.zeros((num_games, len(players)))
@@ -36,9 +37,12 @@ class WizardStatistic(object):
             self.logger.info("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
     def plot_game_statistics(self, interval=200):
-        path_name = 'log/statistics/' + time.strftime("%Y-%m-%d_%H-%M-%S")
+        path = "log/statistics/"
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filename = time.strftime("%Y-%m-%d_%H-%M-%S")
 
-        plot_moving_average_wins(self.players, self.wins, self.scores, path_name, interval=interval)
+        plot_moving_average_wins(self.players, self.wins, self.scores, path + filename, interval=interval)
 
 
 def init_logger(console_logging=False):
@@ -46,7 +50,11 @@ def init_logger(console_logging=False):
     logger = logging.getLogger('wizard-rl')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs debug messages
-    fh = logging.FileHandler('log/wizard-rl.log')
+    path = "log/"
+    filename = path + "wizard-rl.log"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    fh = logging.FileHandler(filename)
     fh.setLevel(logging.DEBUG)
     # create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -65,7 +73,7 @@ def init_logger(console_logging=False):
 
 if __name__ == "__main__":
     tf.reset_default_graph()
-    init_logger()
+    init_logger(console_logging=True)
 
     with tf.Session() as sess:
         featurizer = Featurizer()
@@ -84,8 +92,8 @@ if __name__ == "__main__":
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dqn_agent]
+                   dueling_agent]
 
-        stat = WizardStatistic(players, num_games=10000)
+        stat = WizardStatistic(players, num_games=2000)
         stat.play_games()
-        stat.plot_game_statistics(interval=500)
+        stat.plot_game_statistics(interval=200)

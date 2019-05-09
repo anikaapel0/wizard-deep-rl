@@ -9,7 +9,7 @@ class Featurizer(object):
     and transforms it into an array that is useful for an estimator."""
 
     def __init__(self, count_cards=True):
-        self.logger = logging.getLogger('Featurizer')
+        self.logger = logging.getLogger('wizard-rl.Featurizer')
 
         self.count_cards = count_cards
 

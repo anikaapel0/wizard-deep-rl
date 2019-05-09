@@ -70,7 +70,7 @@ class DQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
                  batch_size=1024, gamma=0.95, target_update=1000, save_update=5000, path="log/dqn"):
         super(DQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
-        self.logger = logging.getLogger('DQNEstimator')
+        self.logger = logging.getLogger('wizard-rl.DQNEstimator')
         self.gamma = gamma
         self.limit_update = limit_update
         self.save_update = save_update
@@ -199,7 +199,7 @@ class DoubleDQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
                  target_update=1000, save_update=5000, path="log/doubledqn/"):
         super(DoubleDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
-        self.logger = logging.getLogger('DoubleDQNEstimator')
+        self.logger = logging.getLogger('wizard-rl.DoubleDQNEstimator')
         self.gamma = gamma
         self.update_rate = max(1, batch_size // 8)
         self.save_update = save_update
@@ -333,7 +333,7 @@ class DuelingDQNEstimator(ValueEstimator):
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
                  gamma=0.95, path="log/dueling", save_update=5000):
         super(DuelingDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, False)
-        self.logger = logging.getLogger('DuelingDQNEstimator')
+        self.logger = logging.getLogger('wizard-rl.DuelingDQNEstimator')
 
         self.gamma = gamma
         self.save_update = save_update
