@@ -1,5 +1,5 @@
 from RLAgents import RLAgent
-from Player import AverageRandomPlayer
+from Player import AverageRandomPlayer, PredictionRandomPlayer
 from GameUtilities.Wizard import Wizard
 from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator, DuelingDQNEstimator
 from Featurizers import Featurizer
@@ -84,16 +84,16 @@ if __name__ == "__main__":
         pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
         max_policy = MaxPolicy(pg_estimator)
         dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn)
-        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator)
+        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
         ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
         pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
         sess.run(tf.global_variables_initializer())
 
-        players = [AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   dueling_agent]
+        players = [PredictionRandomPlayer(sess, tp, featurizer),
+                   PredictionRandomPlayer(sess, tp, featurizer),
+                   PredictionRandomPlayer(sess, tp, featurizer),
+                   dqn_agent]
 
-        stat = WizardStatistic(players, num_games=2000)
+        stat = WizardStatistic(players, num_games=10000)
         stat.play_games()
-        stat.plot_game_statistics(interval=200)
+        stat.plot_game_statistics(interval=500)
