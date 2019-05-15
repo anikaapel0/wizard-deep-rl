@@ -2,6 +2,7 @@ from random import shuffle, randrange, choice, random
 from collections import Counter
 import logging
 
+import Featurizers
 from GameUtilities import Card
 
 
@@ -131,3 +132,38 @@ class AverageRandomPlayer(RandomPlayer):
             return super().get_trump_color()
         else:
             return color_counter.most_common(1)[0][0]
+
+
+class PredictionRandomPlayer(AverageRandomPlayer):
+
+    def __init__(self, session, trick_prediction, featurizer= None):
+        super().__init__()
+        self.session = session
+        self.trick_prediction = trick_prediction
+        if featurizer is None:
+            self.featurizer = Featurizers.Featurizer()
+        else:
+            self.featurizer = featurizer
+
+    def get_prediction(self, trump, predictions, players, restriction=None):
+        s = self.featurizer.transform_handcards(self, trump)
+        average = len(self.whole_hand) // len(players)
+        prediction = self.trick_prediction.predict(s, average)
+
+        # round prediction
+        final_pred = int(round(prediction))
+        if restriction is not None and final_pred == restriction:
+            if prediction < final_pred:
+                final_pred -= 1
+            else:
+                final_pred += 1
+        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+
+        return final_pred
+
+    def trick_ended(self, trump):
+        arr_cards = self.featurizer.transform_handcards(self, trump)
+        self.trick_prediction.update(arr_cards, self.prediction, self.wins)
+
+
+
