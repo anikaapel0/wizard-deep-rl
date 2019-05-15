@@ -117,7 +117,7 @@ class DQNEstimator(ValueEstimator):
         self._merged = tf.summary.merge([summary])
         self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
 
-        self.saver = tf.train.Saver
+        self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'Q_Primary': self._prediction, 'Q_Target': self._target})
 
     def update_from_experience(self):
