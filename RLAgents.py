@@ -154,7 +154,7 @@ class PGAgent(RLAgent):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
         if featurizer is None:
-            featurizer = Featurizers.Featurizer
+            featurizer = Featurizers.Featurizer()
         if policy is None:
             policy = Policies.MaxPolicy(featurizer)
         if estimator is None:

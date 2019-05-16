@@ -45,7 +45,7 @@ class WizardStatistic(object):
         plot_moving_average_wins(self.players, self.wins, self.scores, path + filename, interval=interval)
 
 
-def init_logger(console_logging=False):
+def init_logger(console_logging=False, console_level=logging.ERROR):
     # create logger with 'wizard-rl'
     logger = logging.getLogger('wizard-rl')
     logger.setLevel(logging.DEBUG)
@@ -66,14 +66,14 @@ def init_logger(console_logging=False):
     if console_logging:
         # create console handler with higher log level
         ch = logging.StreamHandler()
-        ch.setLevel(logging.ERROR)
+        ch.setLevel(console_level)
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
 
 if __name__ == "__main__":
     tf.reset_default_graph()
-    init_logger(console_logging=True)
+    init_logger(console_logging=True, console_level=logging.DEBUG)
 
     with tf.Session() as sess:
         featurizer = Featurizer()
@@ -83,16 +83,13 @@ if __name__ == "__main__":
         tp = TrickPrediction(sess)
         pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
         max_policy = MaxPolicy(pg_estimator)
-        dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn)
+        dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
         dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
-        ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator)
-        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy)
+        ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator,trick_prediction=tp)
+        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
         sess.run(tf.global_variables_initializer())
 
-        players = [PredictionRandomPlayer(sess, tp, featurizer),
-                   PredictionRandomPlayer(sess, tp, featurizer),
-                   PredictionRandomPlayer(sess, tp, featurizer),
-                   dqn_agent]
+        players = [pg_agent, dqn_agent, ddqn_agent, dueling_agent]
 
         stat = WizardStatistic(players, num_games=10000)
         stat.play_games()
