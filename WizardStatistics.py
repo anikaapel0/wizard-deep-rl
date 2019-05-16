@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
         players = [pg_agent, dqn_agent, ddqn_agent, dueling_agent]
 
-        stat = WizardStatistic(players, num_games=50)
+        stat = WizardStatistic(players, num_games=10000)
         stat.play_games()
         stat.plot_game_statistics(interval=500)
         winner = stat.get_winner()
