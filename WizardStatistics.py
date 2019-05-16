@@ -44,6 +44,11 @@ class WizardStatistic(object):
 
         plot_moving_average_wins(self.players, self.wins, self.scores, path + filename, interval=interval)
 
+    def get_winner(self):
+        last_wins = np.sum(self.wins[-1000:], axis=0)
+
+        return self.players[np.argmax(last_wins)]
+
 
 def init_logger(console_logging=False, console_level=logging.ERROR):
     # create logger with 'wizard-rl'
@@ -91,6 +96,15 @@ if __name__ == "__main__":
 
         players = [pg_agent, dqn_agent, ddqn_agent, dueling_agent]
 
-        stat = WizardStatistic(players, num_games=10000)
+        stat = WizardStatistic(players, num_games=50)
         stat.play_games()
         stat.plot_game_statistics(interval=500)
+        winner = stat.get_winner()
+        players2 = [AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   winner]
+
+        stat2 = WizardStatistic(players2, num_games=5000)
+        stat2.play_games()
+        stat2.plot_game_statistics(interval=500)
