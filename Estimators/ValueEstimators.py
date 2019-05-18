@@ -63,9 +63,9 @@ class ValueEstimator(Estimator):
 
 
 class DQNEstimator(ValueEstimator):
-    n_hidden_1 = 256
+    n_hidden_1 = 1024
     n_hidden_2 = 512
-    n_hidden_3 = 1024
+    n_hidden_3 = 256
 
     def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
                  batch_size=1024, gamma=0.95, target_update=1000, save_update=5000, path="log/dqn"):

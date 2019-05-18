@@ -18,13 +18,30 @@ import tensorflow as tf
 
 class WizardStatistic(object):
 
-    def __init__(self, players, num_games=20):
+    def __init__(self, session, players, num_games=20, interval=500):
         self.logger = logging.getLogger('wizard-rl.WizardStatistics.WizardStatistic')
         self.num_games = num_games
+        self.interval = interval
         self.num_players = len(players)
         self.wins = np.zeros((num_games, len(players)))
         self.scores = np.zeros((num_games, len(players)))
         self.players = players
+        self.score_writer = None
+        self.score_window = None
+        self.session = session
+        self.wins_window = None
+        self._merged = None
+        self._init_tracking()
+
+    def _init_tracking(self):
+        self.score_window = tf.placeholder("float", [None, self.num_players])
+        self.wins_window = tf.placeholder("float", [None, self.num_players])
+        curr_score = tf.reduce_sum(self.score_window) / self.interval
+        summary_score = tf.summary.scalar('curr_score', curr_score)
+        curr_wins = tf.reduce_sum(self.wins_window) / self.interval
+        summary_wins = tf.summary.scalar('curr_wins', curr_wins)
+        self._merged = tf.summary.merge([summary_score, summary_wins])
+        self.score_writer = tf.summary.FileWriter("log/tf_statistics", self.session.graph)
 
     def play_games(self):
         for i in range(self.num_games):
@@ -33,16 +50,24 @@ class WizardStatistic(object):
             # evaluate scores
             self.wins[i][scores == np.max(scores)] = 1
             self.scores[i] = scores
+            if i > self.interval:
+                curr_scores = self.scores[i - self.interval:i]
+                curr_wins = self.wins[i - self.interval: i]
+                summary = self.session.run(self._merged,
+                                           feed_dict={self.score_window: curr_scores,
+                                                      self.wins_window: curr_wins})
+
+                self.score_writer.add_summary(summary, i)
             self.logger.info("{0}: {1}".format(i, scores))
             self.logger.info("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
 
-    def plot_game_statistics(self, interval=200):
+    def plot_game_statistics(self):
         path = "log/statistics/"
         if not os.path.exists(path):
             os.makedirs(path)
         filename = time.strftime("%Y-%m-%d_%H-%M-%S")
 
-        plot_moving_average_wins(self.players, self.wins, self.scores, path + filename, interval=interval)
+        plot_moving_average_wins(self.players, self.wins, self.scores, path + filename, interval=self.interval)
 
     def get_winner(self):
         last_wins = np.sum(self.wins[-1000:], axis=0)
@@ -90,21 +115,16 @@ if __name__ == "__main__":
         max_policy = MaxPolicy(pg_estimator)
         dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
         dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
-        ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator,trick_prediction=tp)
+        ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator, trick_prediction=tp)
         pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
+
+        players = [AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   AverageRandomPlayer(),
+                   dqn_agent]
+
+        stat = WizardStatistic(sess, players, num_games=100000)
         sess.run(tf.global_variables_initializer())
 
-        players = [pg_agent, dqn_agent, ddqn_agent, dueling_agent]
-
-        stat = WizardStatistic(players, num_games=10000)
         stat.play_games()
-        stat.plot_game_statistics(interval=500)
-        winner = stat.get_winner()
-        players2 = [AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   winner]
-
-        stat2 = WizardStatistic(players2, num_games=5000)
-        stat2.play_games()
-        stat2.plot_game_statistics(interval=500)
+        stat.plot_game_statistics(interval=1000)

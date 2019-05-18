@@ -131,6 +131,8 @@ class RLAgent(AverageRandomPlayer):
             arr_cards = self.featurizer.transform_handcards(self, trump)
             self.trick_prediction.update(arr_cards, self.prediction, self.wins)
 
+        self.policy.decay_epsilon()
+
 
 class DQNAgent(RLAgent):
 
