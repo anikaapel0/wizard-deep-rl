@@ -131,7 +131,7 @@ if __name__ == "__main__":
                    AverageRandomPlayer(),
                    dqn_agent]
 
-        stat = WizardStatistic(sess, players, num_games=500, interval=100)
+        stat = WizardStatistic(sess, players, num_games=10000, interval=500)
         sess.run(tf.global_variables_initializer())
 
         stat.play_games()
