@@ -60,7 +60,7 @@ class PolicyGradient(Estimator):
         sum_hidden_w = tf.summary.histogram("hidden_out", hidden1)
         sum_out_w = tf.summary.histogram("prob_out", out)
         self._merged = tf.summary.merge([sum_loss, sum_hidden_w, sum_out_w])
-        self._sum_writer = tf.summary.FileWriter("log/pg/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter("log/train-summary", self.session.graph)
 
     def update(self, s, a, r, s_prime):
         self.memory_temp.append([s, a, r, s_prime])

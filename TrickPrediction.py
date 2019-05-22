@@ -46,7 +46,7 @@ class TrickPrediction(object):
 
         self._merged = tf.summary.merge([summary])
 
-        self._train_writer = tf.summary.FileWriter("log/trick-prediction/train-summary", self._session.graph)
+        self._train_writer = tf.summary.FileWriter("log/train-summary", self._session.graph)
         self.print_graph()
 
     def update(self, cards, num_forecast, num_tricks):

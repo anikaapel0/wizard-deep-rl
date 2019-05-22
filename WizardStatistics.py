@@ -36,11 +36,19 @@ class WizardStatistic(object):
     def _init_tracking(self):
         self.score_window = tf.placeholder("float", [None, self.num_players])
         self.wins_window = tf.placeholder("float", [None, self.num_players])
-        curr_score = tf.reduce_sum(self.score_window) / self.interval
-        summary_score = tf.summary.scalar('curr_score', curr_score)
-        curr_wins = tf.reduce_sum(self.wins_window) / self.interval
-        summary_wins = tf.summary.scalar('curr_wins', curr_wins)
-        self._merged = tf.summary.merge([summary_score, summary_wins])
+        self.curr_scores = tf.reduce_sum(self.score_window, axis=0) / self.interval
+        self.curr_wins = tf.reduce_sum(self.wins_window, axis=0) / self.interval
+        merging = []
+        for i in range(self.num_players):
+            if isinstance(self.players[i], RLAgent):
+                name = self.players[i].estimator.name()
+            else:
+                name = "RandomPlayer"
+
+            merging.append(tf.summary.scalar('curr_score_{}_{}'.format(i, name), self.curr_scores[i]))
+            merging.append(tf.summary.scalar('curr_wins_{}_{}'.format(i, name), self.curr_wins[i]))
+
+        self._merged = tf.summary.merge(merging)
         self.score_writer = tf.summary.FileWriter("log/tf_statistics", self.session.graph)
 
     def play_games(self):
@@ -53,9 +61,9 @@ class WizardStatistic(object):
             if i > self.interval:
                 curr_scores = self.scores[i - self.interval:i]
                 curr_wins = self.wins[i - self.interval: i]
-                summary = self.session.run(self._merged,
-                                           feed_dict={self.score_window: curr_scores,
-                                                      self.wins_window: curr_wins})
+                summary, _, _ = self.session.run([self._merged, self.curr_wins, self.curr_scores],
+                                                         feed_dict={self.score_window: curr_scores,
+                                                                    self.wins_window: curr_wins})
 
                 self.score_writer.add_summary(summary, i)
             self.logger.info("{0}: {1}".format(i, scores))
@@ -123,8 +131,8 @@ if __name__ == "__main__":
                    AverageRandomPlayer(),
                    dqn_agent]
 
-        stat = WizardStatistic(sess, players, num_games=100000)
+        stat = WizardStatistic(sess, players, num_games=500, interval=100)
         sess.run(tf.global_variables_initializer())
 
         stat.play_games()
-        stat.plot_game_statistics(interval=1000)
+        stat.plot_game_statistics()

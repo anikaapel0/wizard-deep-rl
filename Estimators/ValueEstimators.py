@@ -197,7 +197,7 @@ class DoubleDQNEstimator(ValueEstimator):
     n_hidden_3 = 1024
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=1000, save_update=5000, path="log/doubledqn/"):
+                 target_update=1000, save_update=5000, path="log"):
         super(DoubleDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
         self.logger = logging.getLogger('wizard-rl.DoubleDQNEstimator')
         self.gamma = gamma
@@ -313,15 +313,6 @@ class DoubleDQNEstimator(ValueEstimator):
     def load(self, name="model-doubledqn"):
         save_path = self.saver.restore(self.session, self.path + "/models/model.ckpt")
 
-    def print_graph(self):
-        graph = tf.get_default_graph()
-
-        with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter(self.path + "/graph", sess.graph)
-            # sess.run(self._prediction, feed_dict)
-            writer.close()
-        self.logger.info("Done printing graph")
-
     def name(self):
         return "Double DQN"
 
@@ -331,7 +322,7 @@ class DuelingDQNEstimator(ValueEstimator):
     n_hidden_2 = 512
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
-                 gamma=0.95, path="log/dueling", save_update=5000):
+                 gamma=0.95, path="log", save_update=5000):
         super(DuelingDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, False)
         self.logger = logging.getLogger('wizard-rl.DuelingDQNEstimator')
 
