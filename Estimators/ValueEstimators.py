@@ -116,7 +116,7 @@ class DQNEstimator(ValueEstimator):
         summary = tf.summary.scalar('loss_dqn', self._loss)
 
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
         self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'Q_Primary': self._prediction, 'Q_Target': self._target})
@@ -245,7 +245,7 @@ class DoubleDQNEstimator(ValueEstimator):
         summary = tf.summary.scalar('loss_doubledqn', self._loss)
 
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
         self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'Double_Q_Primary': self._prediction, 'Double_Q_Target': self._target})
@@ -328,6 +328,7 @@ class DuelingDQNEstimator(ValueEstimator):
         self.logger = logging.getLogger('wizard-rl.DuelingDQNEstimator')
 
         self.gamma = gamma
+        self.learning_rate = 0.001
         self.save_update = save_update
         self.t_train = 0
 
@@ -350,25 +351,23 @@ class DuelingDQNEstimator(ValueEstimator):
             hidden1_v = tf.layers.dense(self._state, self.n_hidden_1)
             hidden2_v = tf.layers.dense(hidden1_v, self.n_hidden_2)
 
-            out_v = tf.layers.dense(hidden2_v, 1)
+            value = tf.layers.dense(hidden2_v, 1)
 
             hidden1_a = tf.layers.dense(self._state, self.n_hidden_1)
             hidden2_a = tf.layers.dense(hidden1_a, self.n_hidden_2)
 
-            out_a = tf.layers.dense(hidden2_a, self.output_shape)
-            mean = tf.reduce_mean(out_a, axis=1)
+            advantage = tf.layers.dense(hidden2_a, self.output_shape)
 
-            temp = out_a + out_v
-
-            self.q_values = out_v + tf.subtract(out_a, tf.reduce_mean(out_a, axis=1, keep_dims=True))
+            self.q_values = value + tf.subtract(advantage, tf.reduce_mean(advantage, axis=1, keepdims=True))
+            # self.q_values = tf.reduce_sum(tf.multiply(self.output, self.actions_), axis=1)
 
         with tf.variable_scope("DuelingDQN_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self.q_values)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_dueling', self._loss)
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path , self.session.graph)
 
         self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'q-values-dueling':self.q_values})

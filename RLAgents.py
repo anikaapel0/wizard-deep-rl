@@ -32,6 +32,7 @@ class RLAgent(AverageRandomPlayer):
         self.old_score = 0
         self.old_action = None
         self.whole_hand = None
+        self.training_mode = True
 
     def get_prediction(self, trump, predictions, players, restriction=None):
         if self.trick_prediction is None:
@@ -48,7 +49,7 @@ class RLAgent(AverageRandomPlayer):
                 final_pred -= 1
             else:
                 final_pred += 1
-        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+        # self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
 
         return final_pred
 
@@ -72,7 +73,7 @@ class RLAgent(AverageRandomPlayer):
         state = self.featurizer.transform(self, trump, first, played, players,
                                           played_in_game)
         terminal = False
-        if self.old_state is not None and self.old_action is not None:
+        if self.old_state is not None and self.old_action is not None and self.training_mode:
             r = self.reward
             if r != 0:
                 terminal = True
@@ -90,6 +91,12 @@ class RLAgent(AverageRandomPlayer):
         # Unless it's the last card of the game, then the Game object will
         # call give_reward before the next play_card, setting the correct reward
         return card_to_play
+
+    def enable_training(self):
+        self.training_mode = True
+
+    def disable_training(self):
+        self.training_mode = False
 
     def save_estimator(self, name="default"):
         self.estimator.save(name)
@@ -127,11 +134,12 @@ class RLAgent(AverageRandomPlayer):
         return card_to_return
 
     def trick_ended(self, trump):
-        if self.trick_prediction is not None:
-            arr_cards = self.featurizer.transform_handcards(self, trump)
-            self.trick_prediction.update(arr_cards, self.prediction, self.wins)
+        if self.training_mode:
+            if self.trick_prediction is not None:
+                arr_cards = self.featurizer.transform_handcards(self, trump)
+                self.trick_prediction.update(arr_cards, self.prediction, self.wins)
 
-        self.policy.decay_epsilon()
+            self.policy.decay_epsilon()
 
 
 class DQNAgent(RLAgent):
