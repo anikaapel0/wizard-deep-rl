@@ -1,6 +1,7 @@
 from RLAgents import RLAgent
 from Player import AverageRandomPlayer, PredictionRandomPlayer
 from GameUtilities.Wizard import Wizard
+from GameUtilities.Game import Game
 from Estimators.ValueEstimators import DQNEstimator, DoubleDQNEstimator, DuelingDQNEstimator
 from Featurizers import Featurizer
 from TrickPrediction import TrickPrediction
@@ -51,23 +52,34 @@ class WizardStatistic(object):
         self._merged = tf.summary.merge(merging)
         self.score_writer = tf.summary.FileWriter("log/tf_statistics", self.session.graph)
 
+
+    def update_scores(self, scores, idx_game):
+        self.wins[idx_game][scores == np.max(scores)] = 1
+        self.scores[idx_game] = scores
+        if idx_game > self.interval:
+            curr_scores = self.scores[idx_game - self.interval:idx_game]
+            curr_wins = self.wins[idx_game - self.interval: idx_game]
+            summary, _, _ = self.session.run([self._merged, self.curr_wins, self.curr_scores],
+                                             feed_dict={self.score_window: curr_scores,
+                                                        self.wins_window: curr_wins})
+
+            self.score_writer.add_summary(summary, idx_game)
+        self.logger.info("{0}: {1}".format(idx_game, scores))
+        self.logger.info("{0}: {1}".format(idx_game, np.sum(self.wins, axis=0)))
+
+    def play_same_round(self, num_cards):
+        for i in range(self.num_games):
+            wiz_round = Game(num_cards, self.players, i % 4)
+            scores = wiz_round.play()
+
+            self.update_scores(scores, i)
+
     def play_games(self):
         for i in range(self.num_games):
             wiz = Wizard(num_players=self.num_players, players=self.players)
             scores = wiz.play()
             # evaluate scores
-            self.wins[i][scores == np.max(scores)] = 1
-            self.scores[i] = scores
-            if i > self.interval:
-                curr_scores = self.scores[i - self.interval:i]
-                curr_wins = self.wins[i - self.interval: i]
-                summary, _, _ = self.session.run([self._merged, self.curr_wins, self.curr_scores],
-                                                         feed_dict={self.score_window: curr_scores,
-                                                                    self.wins_window: curr_wins})
-
-                self.score_writer.add_summary(summary, i)
-            self.logger.info("{0}: {1}".format(i, scores))
-            self.logger.info("{0}: {1}".format(i, np.sum(self.wins, axis=0)))
+            self.update_scores(scores, i)
 
     def plot_game_statistics(self):
         path = "log/statistics/"
@@ -116,23 +128,24 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         featurizer = Featurizer()
         # dueling_dqn = DuelingDQNEstimator(sess, input_shape=featurizer.get_state_size())
-        dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
+        # dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size())
         # double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size())
         tp = TrickPrediction(sess)
-        # pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
-        # max_policy = MaxPolicy(pg_estimator)
+        pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size())
+        max_policy = MaxPolicy(pg_estimator)
         # dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
-        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
+        # dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
         # ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator, trick_prediction=tp)
-        # pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
+        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
 
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dqn_agent]
+                   pg_agent]
 
-        stat = WizardStatistic(sess, players, num_games=10000, interval=500)
+        stat = WizardStatistic(sess, players, num_games=50000, interval=1000)
         sess.run(tf.global_variables_initializer())
 
         stat.play_games()
+        # stat.play_same_round(10)
         stat.plot_game_statistics()

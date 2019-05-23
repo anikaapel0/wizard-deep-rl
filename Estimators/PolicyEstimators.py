@@ -21,6 +21,7 @@ class PolicyGradient(Estimator):
         self.input_shape = input_shape
         self.output_shape = output_shape
         self.gamma = gamma  # discount factor
+        self.learning_rate = 0.001
         self.batch_size = batch_size
         self._x = None
         self._actions = None
@@ -54,7 +55,7 @@ class PolicyGradient(Estimator):
         with tf.variable_scope("PG_Learning"):
             cross_entropy = tf.losses.sigmoid_cross_entropy(self._actions, self._logits)
             self._loss = tf.reduce_sum(tf.multiply(self._rewards, cross_entropy))
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         sum_loss = tf.summary.scalar('loss_policy-gradient', self._loss)
         sum_hidden_w = tf.summary.histogram("hidden_out", hidden1)

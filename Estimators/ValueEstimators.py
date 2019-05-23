@@ -72,6 +72,7 @@ class DQNEstimator(ValueEstimator):
         super(DQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
         self.logger = logging.getLogger('wizard-rl.DQNEstimator')
         self.gamma = gamma
+        self.learning_rate = 0.0005
         self.limit_update = limit_update
         self.save_update = save_update
         self._prediction = None
@@ -110,7 +111,7 @@ class DQNEstimator(ValueEstimator):
         with tf.variable_scope("Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             # self._loss = tf.losses.huber_loss(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_dqn', self._loss)
 

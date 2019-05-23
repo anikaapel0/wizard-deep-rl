@@ -5,13 +5,14 @@ import logging
 
 
 class TrickPrediction(object):
-    n_hidden_1 = 40
+    n_hidden_1 = 30
 
     def __init__(self, session, input_shape=59, memory=1000, batch_size=50, gamma=0.95):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
         self.input_shape = input_shape
         self.output_shape = 1
         self.gamma = gamma
+        self.learning_rate = 0.001
         self.memory = [([], 0, 0)] * memory
         self.batch_size = batch_size
         self.update_rate = max(1, batch_size // 8)
@@ -40,7 +41,7 @@ class TrickPrediction(object):
 
         with tf.variable_scope("TP_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
 
