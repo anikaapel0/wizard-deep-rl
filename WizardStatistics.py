@@ -157,27 +157,29 @@ if __name__ == "__main__":
     tf.reset_default_graph()
     init_logger(console_logging=True, console_level=logging.DEBUG)
 
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=2,
+                                          intra_op_parallelism_threads=2,
+                                          use_per_session_threads=True)) as sess:
         featurizer = Featurizer()
         path = "log/start_" + time.strftime("%Y-%m-%d_%H-%M-%S")
 
-        dueling_dqn = DuelingDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
-        # dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
+        # dueling_dqn = DuelingDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
+        dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
         # double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
         tp = TrickPrediction(sess)
         # pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size(), path=path)
         # max_policy = MaxPolicy(pg_estimator)
-        dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
-        # dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
+        # dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
+        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
         # ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator, trick_prediction=tp)
         # pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
 
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dueling_agent]
+                   dqn_agent]
 
-        training = WizardTraining(sess, players, num_games=7000, interval=500, path=path)
+        training = WizardTraining(sess, players, num_games=10000, interval=500, path=path)
         sess.run(tf.global_variables_initializer())
 
         training.train_agents(500)
