@@ -1,7 +1,7 @@
-from GameUtilities.Game import Game
-from Player import AverageRandomPlayer
-from GameUtilities.Card import Card
-from Featurizers import Featurizer
+from Environment.Game import Game
+from GamePlayer.Player import AverageRandomPlayer
+from Environment.Card import Card
+from GamePlayer.Featurizers import Featurizer
 
 from random import seed, getstate, choice
 import numpy as np

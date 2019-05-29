@@ -1,10 +1,9 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import logging
 
-from Player import AverageRandomPlayer, RandomPlayer
-from RLAgents import RLAgent
+from GamePlayer.Player import AverageRandomPlayer, RandomPlayer
+from GamePlayer.RLAgents import RLAgent
 
 plot_colors = ['b', 'k', 'r', 'c', 'm', 'y']
 logger = logging.getLogger('plotting')

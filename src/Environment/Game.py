@@ -1,5 +1,5 @@
-from GameUtilities.Card import Deck, Card
-from GameUtilities.Trick import Trick
+from Environment.Card import Deck, Card
+from Environment.Trick import Trick
 from copy import deepcopy
 import logging
 

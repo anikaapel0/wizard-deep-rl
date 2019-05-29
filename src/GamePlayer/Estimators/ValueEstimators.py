@@ -3,9 +3,9 @@ import numpy as np
 import random
 import logging
 
-from Estimators.Estimators import Estimator
-from GameUtilities.Card import Card
-from GameUtilities.Card import cards_to_bool_array
+from GamePlayer.Estimators.Estimators import Estimator
+from Environment.Card import Card
+from Environment.Card import cards_to_bool_array
 
 
 class ValueEstimator(Estimator):

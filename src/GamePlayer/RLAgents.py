@@ -1,8 +1,7 @@
-from Estimators import ValueEstimators
-from Estimators.PolicyEstimators import PolicyGradient
-import Policies
-import Featurizers
-from Player import AverageRandomPlayer
+from GamePlayer.Estimators import ValueEstimators
+from GamePlayer.Estimators.PolicyEstimators import PolicyGradient
+from GamePlayer import Policies, Featurizers
+from GamePlayer.Player import AverageRandomPlayer
 
 import logging
 
@@ -148,7 +147,8 @@ class RLAgent(AverageRandomPlayer):
 class DQNAgent(RLAgent):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
-        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)
+        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                       trick_prediction=trick_prediction, session=session)
 
 
 class DoubleDQNAgent(RLAgent):
@@ -160,7 +160,21 @@ class DoubleDQNAgent(RLAgent):
         if estimator is None:
             assert session is not None
             estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size())
-        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)
+        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                             trick_prediction=trick_prediction, session=session)
+
+
+class DuelingAgent(RLAgent):
+
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+        if featurizer is None:
+            featurizer = Featurizers.Featurizer()
+
+        if estimator is None:
+            assert session is not None
+            estimator = ValueEstimators.DuelingDQNEstimator(session, input_shape=featurizer.get_state_size())
+        super(DuelingAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                           trick_prediction=trick_prediction, session=session)
 
 
 class PGAgent(RLAgent):
@@ -176,4 +190,5 @@ class PGAgent(RLAgent):
         else:
             assert isinstance(estimator, PolicyGradient)
 
-        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)
+        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                      trick_prediction=trick_prediction, session=session)

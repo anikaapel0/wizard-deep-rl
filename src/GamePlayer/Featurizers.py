@@ -1,4 +1,4 @@
-from GameUtilities import Card
+from Environment import Card
 import random
 from copy import deepcopy
 import logging
@@ -141,3 +141,7 @@ class Featurizer(object):
         count += 126
 
         return count
+
+
+def default_featurizer_state_size():
+    return Featurizer().get_state_size()

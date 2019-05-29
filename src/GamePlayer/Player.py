@@ -2,8 +2,8 @@ from random import shuffle, randrange, choice, random
 from collections import Counter
 import logging
 
-import Featurizers
-from GameUtilities import Card
+from GamePlayer import Featurizers
+from Environment import Card
 
 
 class Player(object):

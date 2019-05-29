@@ -1,6 +1,6 @@
 import numpy as np
-from GameUtilities.Card import Card
-from Estimators.PolicyEstimators import PolicyGradient
+from Environment.Card import Card
+from GamePlayer.Estimators.PolicyEstimators import PolicyGradient
 import logging
 
 
