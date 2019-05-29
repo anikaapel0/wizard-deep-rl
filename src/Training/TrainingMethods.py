@@ -118,6 +118,14 @@ class SelfPlayTraining(WizardTraining):
         self.update_scores(eval_scores, eval_wins)
         self.enable_training()
 
+    def update_scores(self, scores, wins):
+        summary, mean_scores, mean_wins = self.session.run([self._merged, self.curr_wins, self.curr_scores],
+                                                           feed_dict={self.score_window: scores,
+                                                                      self.wins_window: wins})
+
+        self.score_writer.add_summary(summary, self.t_eval)
+        self.logger.info("Evaluation {0}\n\tScores: {1}\n\tWins: {2}".format(self.t_eval, mean_scores, mean_wins))
+
     def train_agent(self, random_agents_interval):
         self.log_training_info()
         for i in range(self.num_games):
