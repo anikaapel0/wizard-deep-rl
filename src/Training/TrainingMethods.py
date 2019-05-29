@@ -32,8 +32,8 @@ class WizardTraining(object):
     def _init_tracking(self):
         self.score_window = tf.placeholder("float", [None, self.num_players])
         self.wins_window = tf.placeholder("float", [None, self.num_players])
-        self.curr_scores = tf.reduce_sum(self.score_window, axis=0) / self.evaluation_games
-        self.curr_wins = tf.reduce_sum(self.wins_window, axis=0) / self.evaluation_games
+        self.curr_scores = tf.reduce_sum(self.score_window, axis=0) / self.interval
+        self.curr_wins = tf.reduce_sum(self.wins_window, axis=0) / self.interval
         merging = []
         for i in range(self.num_players):
             name = self.players[i].name()
@@ -150,11 +150,11 @@ class TrainingAgainstOtherPlayer(WizardTraining):
 
     def init_player(self, player_type, tp, opponents):
         if opponents is None:
-            player = [AverageRandomPlayer() for _ in range(self.num_players)]
+            player = [AverageRandomPlayer() for _ in range(self.num_players - 1)]
         else:
             player = opponents
 
-        player.append(get_player(player_type, tp))
+        player.append(get_player(self.session, player_type, tp))
 
         return player
 
@@ -163,13 +163,13 @@ class TrainingAgainstOtherPlayer(WizardTraining):
         self.wins[i][np.argmax(scores)] = 1
 
         if i > self.interval:
-            curr_scores = self.scores[self.t_train - self.interval: self.t_train]
-            curr_wins = self.wins[self.t_train - self.interval: self.t_train]
+            curr_scores = self.scores[i - self.interval: i]
+            curr_wins = self.wins[i - self.interval: i]
             summary, mean_wins, mean_scores = self.session.run([self._merged, self.curr_wins, self.curr_scores],
                                                                feed_dict={self.score_window: curr_scores,
                                                                           self.wins_window: curr_wins})
 
-        self.score_writer.add_summary(summary, self.t_train)
+            self.score_writer.add_summary(summary, i)
 
     def get_winner(self):
         last_wins = np.sum(self.wins[-1000:], axis=0)

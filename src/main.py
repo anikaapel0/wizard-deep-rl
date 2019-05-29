@@ -37,26 +37,26 @@ def others_training_agent(type, tp, train_rounds, interval):
     with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=2,
                                           intra_op_parallelism_threads=2,
                                           use_per_session_threads=True)) as sess:
-        training = TrainingAgainstOtherPlayer(session=sess, players_type=type, num_games=train_rounds, tp=tp,
+        training = TrainingAgainstOtherPlayer(session=sess, player_type=type, num_games=train_rounds, tp=tp,
                                               interval=interval)
         sess.run(tf.global_variables_initializer())
         training.train_agent()
 
 
-def others_training_ddqn(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
-    others_training_agent(DDQN_PLAYER, tp, train_rounds, interval, evaluation_interval)
+def others_training_ddqn(tp=False, train_rounds=10000, interval=500):
+    others_training_agent(DDQN_PLAYER, tp, train_rounds, interval)
 
 
-def others_training_dqn(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
-    others_training_agent(DQN_PLAYER, tp, train_rounds, interval, evaluation_interval)
+def others_training_dqn(tp=False, train_rounds=10000, interval=500):
+    others_training_agent(DQN_PLAYER, tp, train_rounds, interval)
 
 
-def others_training_dueling(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
-    others_training_agent(DUELING_PLAYER, tp, train_rounds, interval, evaluation_interval)
+def others_training_dueling(tp=False, train_rounds=10000, interval=500):
+    others_training_agent(DUELING_PLAYER, tp, train_rounds, interval)
 
 
-def others_training_pg(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
-    others_training_agent(PG_PLAYER, tp, train_rounds, interval, evaluation_interval)
+def others_training_pg(tp=False, train_rounds=10000, interval=500):
+    others_training_agent(PG_PLAYER, tp, train_rounds, interval)
 
 
 def self_training_agent(type, tp, train_rounds, interval, evaluation_interval):
@@ -88,9 +88,19 @@ def self_training_pg(tp=False, train_rounds=10000, interval=500, evaluation_inte
 if __name__ == "__main__":
     init_logger(console_logging=True, console_level=logging.DEBUG)
 
-    self_training_dqn(tp=True)
-    self_training_dqn(tp=False)
-    self_training_pg(tp=True)
-    self_training_pg(tp=False)
-    self_training_ddqn(tp=True)
-    self_training_ddqn(tp=False)
+    # self_training_dqn(tp=True)
+    # self_training_dqn(tp=False)
+    # self_training_pg(tp=True)
+    # self_training_pg(tp=False)
+    # self_training_ddqn(tp=True)
+    # self_training_ddqn(tp=False)
+    # self_training_dueling(tp=True)
+    # self_training_dueling(tp=False)
+    others_training_dqn(tp=False)
+    others_training_dqn(tp=True)
+    others_training_pg(tp=False)
+    others_training_pg(tp=True)
+    others_training_ddqn(tp=False)
+    others_training_ddqn(tp=True)
+    others_training_dueling(tp=True)
+    others_training_dueling(tp=False)
