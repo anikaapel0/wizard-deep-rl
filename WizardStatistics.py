@@ -167,19 +167,19 @@ if __name__ == "__main__":
         dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
         # double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
         tp = TrickPrediction(sess)
-        # pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size(), path=path)
-        # max_policy = MaxPolicy(pg_estimator)
+        pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size(), path=path)
+        max_policy = MaxPolicy(pg_estimator)
         # dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
-        dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
+        # dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
         # ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator, trick_prediction=tp)
-        # pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
+        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
 
         players = [AverageRandomPlayer(),
                    AverageRandomPlayer(),
                    AverageRandomPlayer(),
-                   dqn_agent]
+                   pg_agent]
 
-        training = WizardTraining(sess, players, num_games=10000, interval=500, path=path)
+        training = WizardTraining(sess, players, num_games=50000, interval=500, path=path)
         sess.run(tf.global_variables_initializer())
 
         training.train_agents(500)
