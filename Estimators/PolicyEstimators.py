@@ -10,7 +10,7 @@ class PolicyGradient(Estimator):
     n_hidden_1 = 500
     n_hidden_2 = 250
 
-    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500):
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500, path="log/train-summary"):
         self.logger = logging.getLogger('wizard-rl.PolicyGradient')
         self.memory = []
         self.memory_temp = []
@@ -23,6 +23,7 @@ class PolicyGradient(Estimator):
         self.gamma = gamma  # discount factor
         self.learning_rate = 0.001
         self.batch_size = batch_size
+        self.path = path
         self._x = None
         self._actions = None
         self._rewards = None
@@ -61,7 +62,7 @@ class PolicyGradient(Estimator):
         sum_hidden_w = tf.summary.histogram("hidden_out", hidden1)
         sum_out_w = tf.summary.histogram("prob_out", out)
         self._merged = tf.summary.merge([sum_loss, sum_hidden_w, sum_out_w])
-        self._sum_writer = tf.summary.FileWriter("log/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
     def update(self, s, a, r, s_prime):
         self.memory_temp.append([s, a, r, s_prime])

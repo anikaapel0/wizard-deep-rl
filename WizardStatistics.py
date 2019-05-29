@@ -1,4 +1,4 @@
-from RLAgents import RLAgent
+from RLAgents import RLAgent, PGAgent, DQNAgent, DoubleDQNAgent
 from Player import AverageRandomPlayer, PredictionRandomPlayer
 from GameUtilities.Wizard import Wizard
 from GameUtilities.Game import Game
@@ -22,13 +22,13 @@ class WizardTraining(object):
     def __init__(self, session, players, num_games=20, interval=500,
                  path="log/tf_statistics", evaluation_games=1000):
         self.logger = logging.getLogger('wizard-rl.WizardStatistics.WizardStatistic')
+        self.players = players
         self.num_games = num_games
         self.interval = interval
         self.num_players = len(players)
         self.evaluation_games = evaluation_games
         self.wins = np.zeros((num_games, len(players)))
         self.scores = np.zeros((num_games, len(players)))
-        self.players = players
         self.path = path
         self.score_writer = None
         self.score_window = None
@@ -37,6 +37,13 @@ class WizardTraining(object):
         self.t_eval = 0
         self._merged = None
         self._init_tracking()
+        self.log_train_message()
+
+    def log_train_message(self):
+        self.logger.info("New Wizard Training with the following players:")
+
+        for player in self.players:
+            self.logger.info("\t{}".format(player.name()))
 
     def _init_tracking(self):
         self.score_window = tf.placeholder("float", [None, self.num_players])
@@ -57,7 +64,7 @@ class WizardTraining(object):
         self.score_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
     def update_scores(self, scores, wins):
-        summary, mean_scores, mean_wins = self.session.run([self._merged, self.curr_wins, self.curr_scores],
+        summary, mean_wins, mean_scores = self.session.run([self._merged, self.curr_wins, self.curr_scores],
                                                            feed_dict={self.score_window: scores,
                                                                       self.wins_window: wins})
 
@@ -153,35 +160,66 @@ def init_logger(console_logging=False, console_level=logging.ERROR):
         logger.addHandler(ch)
 
 
-if __name__ == "__main__":
+def train_agent(sess, agent, train_rounds, interval, evaluation_interval):
+    path = "log/start_" + time.strftime("%Y-%m-%d_%H-%M-%S")
+
+    players = [AverageRandomPlayer(),
+               AverageRandomPlayer(),
+               AverageRandomPlayer(),
+               agent]
+
+    training = WizardTraining(sess, players, num_games=train_rounds, interval=interval, path=path)
+    sess.run(tf.global_variables_initializer())
+
+    training.train_agents(evaluation_interval)
+
+    return agent, path
+
+
+def get_tp(tp, session):
+    if tp:
+        return TrickPrediction(session=session)
+    else:
+        return None
+
+
+def train_single_ddqn(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
     tf.reset_default_graph()
-    init_logger(console_logging=True, console_level=logging.DEBUG)
 
     with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=2,
                                           intra_op_parallelism_threads=2,
                                           use_per_session_threads=True)) as sess:
-        featurizer = Featurizer()
-        path = "log/start_" + time.strftime("%Y-%m-%d_%H-%M-%S")
+        agent = DoubleDQNAgent(session=sess, trick_prediction=get_tp(tp, sess))
+        return train_agent(sess, agent, train_rounds, interval, evaluation_interval)
 
-        # dueling_dqn = DuelingDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
-        dqn_estimator = DQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
-        # double_estimator = DoubleDQNEstimator(sess, input_shape=featurizer.get_state_size(), path=path)
-        tp = TrickPrediction(sess)
-        pg_estimator = PolicyGradient(sess, input_shape=featurizer.get_state_size(), path=path)
-        max_policy = MaxPolicy(pg_estimator)
-        # dueling_agent = RLAgent(featurizer=featurizer, estimator=dueling_dqn, trick_prediction=tp)
-        # dqn_agent = RLAgent(featurizer=featurizer, estimator=dqn_estimator, trick_prediction=tp)
-        # ddqn_agent = RLAgent(featurizer=featurizer, estimator=double_estimator, trick_prediction=tp)
-        pg_agent = RLAgent(featurizer=featurizer, estimator=pg_estimator, policy=max_policy, trick_prediction=tp)
 
-        players = [AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   AverageRandomPlayer(),
-                   pg_agent]
+def train_single_dqn(tp=False, train_rounds=10000, interval=500, evaluation_interval=500):
+    tf.reset_default_graph()
 
-        training = WizardTraining(sess, players, num_games=50000, interval=500, path=path)
-        sess.run(tf.global_variables_initializer())
+    with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=2,
+                                          intra_op_parallelism_threads=2,
+                                          use_per_session_threads=True)) as sess:
 
-        training.train_agents(500)
-        # stat.play_same_round(10)
-        # training.plot_game_statistics()
+        agent = DQNAgent(trick_prediction=get_tp(tp, sess), session=sess)
+        return train_agent(sess, agent, train_rounds, interval, evaluation_interval)
+
+
+def train_single_pg(tp=False, train_rounds=50000, interval=500, evaluation_interval=500):
+    tf.reset_default_graph()
+
+    with tf.Session(config=tf.ConfigProto(inter_op_parallelism_threads=2,
+                                          intra_op_parallelism_threads=2,
+                                          use_per_session_threads=True)) as sess:
+        agent = PGAgent(session=sess, trick_prediction=get_tp(tp, sess))
+        return train_agent(sess, agent, train_rounds, interval, evaluation_interval)
+
+
+if __name__ == "__main__":
+    init_logger(console_logging=True, console_level=logging.DEBUG)
+
+    train_single_dqn(tp=True)
+    train_single_dqn(tp=False)
+    train_single_pg(tp=True)
+    train_single_pg(tp=False)
+    train_single_ddqn(tp=True)
+    train_single_ddqn(tp=False)

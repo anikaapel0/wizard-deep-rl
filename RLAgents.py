@@ -141,11 +141,14 @@ class RLAgent(AverageRandomPlayer):
 
             self.policy.decay_epsilon()
 
+    def name(self):
+        return self.estimator.name()
+
 
 class DQNAgent(RLAgent):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
-        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)
+        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)
 
 
 class DoubleDQNAgent(RLAgent):
@@ -157,7 +160,7 @@ class DoubleDQNAgent(RLAgent):
         if estimator is None:
             assert session is not None
             estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size())
-        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)
+        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)
 
 
 class PGAgent(RLAgent):
@@ -173,4 +176,4 @@ class PGAgent(RLAgent):
         else:
             assert isinstance(estimator, PolicyGradient)
 
-        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction)
+        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer, trick_prediction=trick_prediction, session=session)

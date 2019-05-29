@@ -61,6 +61,9 @@ class Player(object):
     def reset_score(self):
         self.score = 0
 
+    def name(self):
+        raise NotImplementedError("This needs to be implemented by your Player class")
+
 
 class RandomPlayer(Player):
     """A completely random agent, it always chooses all
@@ -101,6 +104,9 @@ class RandomPlayer(Player):
         # Randomly return any color except white.
         return choice(Card.Card.colors[1:])
 
+    def name(self):
+        return "RandomPlayer"
+
 
 class AverageRandomPlayer(RandomPlayer):
     """Agent that uses random cards, but chooses an 'average'
@@ -132,6 +138,9 @@ class AverageRandomPlayer(RandomPlayer):
             return super().get_trump_color()
         else:
             return color_counter.most_common(1)[0][0]
+
+    def name(self):
+        return "AverageRandomPlayer"
 
 
 class PredictionRandomPlayer(AverageRandomPlayer):
@@ -165,5 +174,5 @@ class PredictionRandomPlayer(AverageRandomPlayer):
         arr_cards = self.featurizer.transform_handcards(self, trump)
         self.trick_prediction.update(arr_cards, self.prediction, self.wins)
 
-
-
+    def name(self):
+        return "PredictionRandomPlayer"
