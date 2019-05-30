@@ -9,7 +9,7 @@ import logging
 class RLAgent(AverageRandomPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         super().__init__()
         self.logger = logging.getLogger('wizard-rl.RLAgent')
         if featurizer is None:
@@ -18,7 +18,7 @@ class RLAgent(AverageRandomPlayer):
             self.featurizer = featurizer
         if estimator is None:
             assert session is not None
-            self.estimator = ValueEstimators.DQNEstimator(session, input_shape=self.featurizer.get_state_size())
+            self.estimator = ValueEstimators.DQNEstimator(session, input_shape=self.featurizer.get_state_size(), path=path)
         else:
             self.estimator = estimator
         if policy is None:
@@ -149,49 +149,49 @@ class RLAgent(AverageRandomPlayer):
 
 class DQNAgent(RLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                       trick_prediction=trick_prediction, session=session)
+                                       trick_prediction=trick_prediction, session=session, path=path)
 
 
 class DoubleDQNAgent(RLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
 
         if estimator is None:
             assert session is not None
-            estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size())
+            estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size(), path=path)
         super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                             trick_prediction=trick_prediction, session=session)
+                                             trick_prediction=trick_prediction, session=session, path=path)
 
 
 class DuelingAgent(RLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
 
         if estimator is None:
             assert session is not None
-            estimator = ValueEstimators.DuelingDQNEstimator(session, input_shape=featurizer.get_state_size())
+            estimator = ValueEstimators.DuelingDQNEstimator(session, input_shape=featurizer.get_state_size(), path=path)
         super(DuelingAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                           trick_prediction=trick_prediction, session=session)
+                                           trick_prediction=trick_prediction, session=session, path=path)
 
 
 class PGAgent(RLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
+    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
         if estimator is None:
             assert session is not None
-            estimator = PolicyGradient(session, featurizer.get_state_size())
+            estimator = PolicyGradient(session, featurizer.get_state_size(), path=path)
         else:
             assert isinstance(estimator, PolicyGradient)
         if policy is None:
             policy = Policies.MaxPolicy(estimator)
 
         super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                      trick_prediction=trick_prediction, session=session)
+                                      trick_prediction=trick_prediction, session=session, path=path)

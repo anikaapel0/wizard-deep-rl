@@ -7,8 +7,10 @@ import logging
 class TrickPrediction(object):
     n_hidden_1 = 30
 
-    def __init__(self, session, input_shape=59, memory=10000, batch_size=100, gamma=0.95):
+    def __init__(self, session, path, input_shape=59, memory=32, batch_size=32, gamma=0.95):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
+        self._session = session
+        self.path = path
         self.input_shape = input_shape
         self.output_shape = 1
         self.gamma = gamma
@@ -24,7 +26,6 @@ class TrickPrediction(object):
         self._x = None
         self._y = None
         self._var_init = None
-        self._session = session
         self._trained = False
         self._merged = None
         self._train_writer = None
@@ -41,14 +42,13 @@ class TrickPrediction(object):
 
         with tf.variable_scope("TP_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
+            self._optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
 
         self._merged = tf.summary.merge([summary])
 
-        self._train_writer = tf.summary.FileWriter("log/train-summary", self._session.graph)
-        self.print_graph()
+        self._train_writer = tf.summary.FileWriter(self.path, self._session.graph)
 
     def update(self, cards, num_forecast, num_tricks):
         """
@@ -110,5 +110,5 @@ class TrickPrediction(object):
         graph = tf.get_default_graph()
 
         with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter("log/trick-prediction/graph", sess.graph)
+            writer = tf.summary.FileWriter(self.path + "/tp-graph", sess.graph)
             writer.close()

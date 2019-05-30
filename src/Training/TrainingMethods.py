@@ -104,8 +104,8 @@ class SelfPlayTraining(WizardTraining):
         self.score_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
     def _init_players(self, players_type, tp):
-        trick_prediction = get_tp(self.session, tp)
-        estimator, featurizer = get_estimator(self.session, players_type)
+        trick_prediction = get_tp(self.session, tp, self.path)
+        estimator, featurizer = get_estimator(self.session, players_type, self.path)
         self.players = []
         for _ in range(self.num_players):
             self.players.append(RLAgent(estimator=estimator, session=self.session, trick_prediction=trick_prediction,
@@ -176,7 +176,7 @@ class TrainingAgainstOtherPlayer(WizardTraining):
         else:
             player = opponents
 
-        player.append(get_player(self.session, player_type, tp))
+        player.append(get_player(self.session, player_type, self.path, tp))
 
         return player
 
@@ -210,38 +210,38 @@ class TrainingAgainstOtherPlayer(WizardTraining):
             self.update_scores(scores, i)
 
 
-def get_tp(session, tp):
+def get_tp(session, tp, path):
     if tp:
-        return TrickPrediction(session=session)
+        return TrickPrediction(session=session, path=path)
     else:
         return None
 
 
-def get_estimator(session, player_type):
+def get_estimator(session, player_type, path):
     featurizer = Featurizer()
     input_shape = featurizer.get_state_size()
     if player_type == DQN_PLAYER:
-        estimator = DQNEstimator(session=session, input_shape=input_shape)
+        estimator = DQNEstimator(session=session, input_shape=input_shape, path=path)
     elif player_type == DDQN_PLAYER:
-        estimator = DoubleDQNEstimator(session=session, input_shape=input_shape)
+        estimator = DoubleDQNEstimator(session=session, input_shape=input_shape, path=path)
     elif player_type == PG_PLAYER:
-        estimator = PolicyGradient(session=session, input_shape=input_shape)
+        estimator = PolicyGradient(session=session, input_shape=input_shape, path=path)
     elif player_type == DUELING_PLAYER:
-        estimator = DuelingDQNEstimator(session=session, input_shape=input_shape)
+        estimator = DuelingDQNEstimator(session=session, input_shape=input_shape, path=path)
 
     return estimator, featurizer
 
 
-def get_player(session, player_type, tp=None):
-    trick_prediction = get_tp(session, tp)
+def get_player(session, player_type, path, tp=None):
+    trick_prediction = get_tp(session, tp, path)
     if player_type == DQN_PLAYER:
-        return DQNAgent(session=session, trick_prediction=trick_prediction)
+        return DQNAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == DDQN_PLAYER:
-        return DoubleDQNAgent(session=session, trick_prediction=trick_prediction)
+        return DoubleDQNAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == PG_PLAYER:
-        return PGAgent(session=session, trick_prediction=trick_prediction)
+        return PGAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == DUELING_PLAYER:
-        return DuelingAgent(session=session, trick_prediction=trick_prediction)
+        return DuelingAgent(session=session, trick_prediction=trick_prediction, path=path)
 
 
 def log_players(logger, players):
