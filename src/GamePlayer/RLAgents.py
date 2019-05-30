@@ -141,7 +141,10 @@ class RLAgent(AverageRandomPlayer):
             self.policy.decay_epsilon()
 
     def name(self):
-        return self.estimator.name()
+        name = self.estimator.name()
+        if self.trick_prediction is not None:
+            name += " TP"
+        return name
 
 
 class DQNAgent(RLAgent):
@@ -182,13 +185,13 @@ class PGAgent(RLAgent):
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
-        if policy is None:
-            policy = Policies.MaxPolicy(featurizer)
         if estimator is None:
             assert session is not None
             estimator = PolicyGradient(session, featurizer.get_state_size())
         else:
             assert isinstance(estimator, PolicyGradient)
+        if policy is None:
+            policy = Policies.MaxPolicy(estimator)
 
         super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
                                       trick_prediction=trick_prediction, session=session)

@@ -89,6 +89,20 @@ class SelfPlayTraining(WizardTraining):
         self._merged = None
         self._init_tracking()
 
+    def _init_tracking(self):
+        self.score_window = tf.placeholder("float", [None, self.num_players])
+        self.wins_window = tf.placeholder("float", [None, self.num_players])
+        self.curr_scores = tf.reduce_sum(self.score_window, axis=0) / self.evaluation_games
+        self.curr_wins = tf.reduce_sum(self.wins_window, axis=0) / self.evaluation_games
+        merging = []
+        for i in range(self.num_players):
+            name = self.players[i].name()
+            merging.append(tf.summary.scalar('curr_score_{}_{}'.format(i, name), self.curr_scores[i]))
+            merging.append(tf.summary.scalar('curr_wins_{}_{}'.format(i, name), self.curr_wins[i]))
+
+        self._merged = tf.summary.merge(merging)
+        self.score_writer = tf.summary.FileWriter(self.path, self.session.graph)
+
     def _init_players(self, players_type, tp):
         trick_prediction = get_tp(self.session, tp)
         estimator, featurizer = get_estimator(self.session, players_type)
@@ -188,7 +202,7 @@ class TrainingAgainstOtherPlayer(WizardTraining):
         self.log_training_info()
         for i in range(self.num_games):
             if i % 100 == 0:
-                self.logger.info("Playing training round {}".format(i))
+                self.logger.info("Playing round {}".format(i))
 
             wiz = Wizard(num_players=self.num_players, players=self.players)
             scores = wiz.play()

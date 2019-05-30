@@ -7,7 +7,7 @@ import logging
 class TrickPrediction(object):
     n_hidden_1 = 30
 
-    def __init__(self, session, input_shape=59, memory=1000, batch_size=50, gamma=0.95):
+    def __init__(self, session, input_shape=59, memory=10000, batch_size=100, gamma=0.95):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
         self.input_shape = input_shape
         self.output_shape = 1
