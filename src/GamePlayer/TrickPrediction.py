@@ -8,9 +8,9 @@ from Environment.Card import Card
 
 
 class TrickPrediction(object):
-    n_hidden_1 = 30
+    n_hidden_1 = 40
 
-    def __init__(self, session, path, input_shape=59, memory=1000, batch_size=32, gamma=0.95):
+    def __init__(self, session, path, input_shape=59, memory=1024, batch_size=64, gamma=0.95):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
         self._session = session
         self.path = path
@@ -20,6 +20,7 @@ class TrickPrediction(object):
         self.learning_rate = 0.001
         self.memory = [([], 0, 0)] * memory
         self.batch_size = batch_size
+        self.training_episodes = 50
         self.update_rate = max(1, batch_size // 8)
         self.t = 0
         self.t_train = 0
@@ -34,6 +35,7 @@ class TrickPrediction(object):
         self._histos = [None] * MAX_ROUNDS
         self._sum_histograms = [None] * MAX_ROUNDS
         self._train_writer = None
+        self.skidding = 0
         self._init_model()
 
     def _init_model(self):
@@ -47,11 +49,11 @@ class TrickPrediction(object):
 
         with tf.variable_scope("TP_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
-            self._optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
         for i in range(MAX_ROUNDS):
-            self._histos[i] = tf.summary.histogram("histo_tp_{}_cards".format(i), tf.reduce_sum(self._prediction))
+            self._histos[i] = tf.summary.histogram("histo_tp_{}_cards".format(i), tf.math.round(tf.reduce_sum(self._prediction)))
             self._sum_histograms[i] = tf.summary.merge([self._histos[i]])
 
         self._merged = tf.summary.merge([summary])
@@ -72,10 +74,15 @@ class TrickPrediction(object):
         self.t += 1
         if self.t == len(self.memory) * 2:
             # Prevent overflow, this might cause skidding in the update rate
+            self.skidding += 1
             self.t = len(self.memory)
 
         # If memory is full, we can start training
         if self.t % len(self.memory) == 0:
+            self.update_network()
+
+    def update_network(self):
+        for _ in range(self.training_episodes):
             # Randomly sample from experience
             minibatch = random.sample(self.memory, self.batch_size)
             # Initialize x and y for the neural network

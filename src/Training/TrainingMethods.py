@@ -256,9 +256,9 @@ def get_average_player(session, player_type, path):
 
 def get_player(session, player_type, path, tp=False):
     if tp:
-        get_tp_player(session, player_type, path)
+        return get_tp_player(session, player_type, path)
     else:
-        get_average_player(session, player_type, path)
+        return get_average_player(session, player_type, path)
 
 
 def log_players(logger, players):

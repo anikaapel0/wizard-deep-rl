@@ -48,13 +48,12 @@ class Game(object):
             winner, trick_cards = trick.play()
             # Trick winner gets a win and starts the next trick.
             wins[winner] += 1
+            # update wins
+            self.players[winner].wins += 1
             self.first_player = winner
             # Game keeps track of the played cards.
             self.played_cards += trick_cards
 
-            # Update wins
-            for i in range(len(self.players)):
-                self.players[i].wins += wins[i]
             # self.logger.info("{} won the game!".format(winner))
 
         for i in range(len(self.players)):
