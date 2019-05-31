@@ -3,11 +3,14 @@ import numpy as np
 import random
 import logging
 
+from Environment.Wizard import MAX_ROUNDS
+from Environment.Card import Card
+
 
 class TrickPrediction(object):
     n_hidden_1 = 30
 
-    def __init__(self, session, path, input_shape=59, memory=32, batch_size=32, gamma=0.95):
+    def __init__(self, session, path, input_shape=59, memory=1000, batch_size=32, gamma=0.95):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
         self._session = session
         self.path = path
@@ -28,6 +31,8 @@ class TrickPrediction(object):
         self._var_init = None
         self._trained = False
         self._merged = None
+        self._histos = [None] * MAX_ROUNDS
+        self._sum_histograms = [None] * MAX_ROUNDS
         self._train_writer = None
         self._init_model()
 
@@ -45,6 +50,9 @@ class TrickPrediction(object):
             self._optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_tp', self._loss)
+        for i in range(MAX_ROUNDS):
+            self._histos[i] = tf.summary.histogram("histo_tp_{}_cards".format(i), tf.reduce_sum(self._prediction))
+            self._sum_histograms[i] = tf.summary.merge([self._histos[i]])
 
         self._merged = tf.summary.merge([summary])
 
@@ -85,6 +93,7 @@ class TrickPrediction(object):
             self.train_model(x, y)
 
     def train_model(self, batch_x, batch_y):
+        self._trained = True
         self.t_train += 1
         self.logger.info("TRAINING TRICK PREDICTION no. {}".format(self.t_train))
 
@@ -97,10 +106,15 @@ class TrickPrediction(object):
         self._train_writer.add_summary(summary, self.t_train)
 
     def predict(self, s, average):
+        game = np.sum(s[:Card.DIFFERENT_CARDS])
         if not self._trained:
             return average
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
-        return self._session.run(self._prediction, feed_dict)[0, 0]
+        summ, histo, prediction = self._session.run([self._sum_histograms[game], self._histos[game], self._prediction], feed_dict)
+        self._train_writer.add_summary(summ)
+        pred = prediction[0, 0]
+
+        return pred
 
     def close(self):
         if self._session is not None:

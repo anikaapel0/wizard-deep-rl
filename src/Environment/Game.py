@@ -54,7 +54,7 @@ class Game(object):
 
             # Update wins
             for i in range(len(self.players)):
-                self.players[i].wins = wins[i]
+                self.players[i].wins += wins[i]
             # self.logger.info("{} won the game!".format(winner))
 
         for i in range(len(self.players)):
@@ -92,6 +92,7 @@ class Game(object):
             prediction = player.get_prediction(self.trump_card,
                                                self.predictions,
                                                self.players,
+                                               self.game_num,
                                                restriction)
             self.predictions[current_player_index] = prediction
             all_predictions += prediction

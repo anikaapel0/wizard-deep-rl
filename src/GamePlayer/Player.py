@@ -1,8 +1,9 @@
-from random import shuffle, randrange, choice, random
+from random import choice
 from collections import Counter
 import logging
 
-from GamePlayer import Featurizers
+from GamePlayer.PredictionPlayer import PredictionPlayer, RandomPredictionPlayer, AveragePredictionPlayer, NetworkPredictionPlayer
+from GamePlayer.CardPlayer import CardPlayer, RandomCardPlayer, RLCardPlayer
 from Environment import Card
 
 
@@ -10,43 +11,21 @@ class Player(object):
 
     def __init__(self):
         self.logger = logging.getLogger('wizard-rl.Player')
-
         self.hand = []
         self.score = 0
         self.reward = 0
         self.wins = 0
-        self.prediction = -1
         self.whole_hand = None
-        self.trick_prediction = None
+        super(Player, self).__init__()
 
-    def get_playable_cards(self, first):
-        playable_cards = []
-        first_colors = []
-        if first is None:
-            return self.hand
-        for card in self.hand:
-            # White cards can ALWAYS be played.
-            if card.color == "White":
-                playable_cards.append(card)
-            # First card color can ALWAYS be played.
-            elif card.color == first.color:
-                first_colors.append(card)
-            # Other colors can only be played if there
-            # no cards of the first color in the hand.
-        if len(first_colors) > 0:
-            return playable_cards + first_colors
-        else:
-            # Cannot follow suit, use ANY card.
-            return self.hand
+    # def get_prediction(self, trump, predictions, players, game_num, restriction=None):
+    #     raise NotImplementedError("This needs to be implemented by your Player class")
 
-    def play_card(self, trump, first, played, players, played_in_game):
-        raise NotImplementedError("This needs to be implemented by your Player class")
+    # def play_card(self, trump, first, played, players, played_in_game):
+    #     raise NotImplementedError("This needs to be implemented by your Player class")
 
-    def get_prediction(self, trump, predictions, players, restriction=None):
-        raise NotImplementedError("This needs to be implemented by your Player class")
-
-    def get_trump_color(self):
-        raise NotImplementedError("This needs to be implemented by your Player class")
+    # def get_trump_color(self):
+    #     raise NotImplementedError("This needs to be implemented by your Player class")
 
     def trick_ended(self, trump):
         return
@@ -65,66 +44,24 @@ class Player(object):
         raise NotImplementedError("This needs to be implemented by your Player class")
 
 
-class RandomPlayer(Player):
+class RandomPlayer(Player, RandomCardPlayer, RandomPredictionPlayer):
     """A completely random agent, it always chooses all
     its actions randomly"""
 
     def __init__(self):
         super().__init__()
 
-    def play_card(self, trump, first, played, players, played_in_game):
-        """Randomly play any VALID card.
-        Returns:
-            card_to_play: (Card) the chosen card from the player hand.
-            """
-        possible_actions = super().get_playable_cards(first)
-        if not isinstance(possible_actions, list):
-            possible_actions = list(possible_actions)
-        shuffle(possible_actions)
-        card_to_play = possible_actions[0]
-        self.hand.remove(card_to_play)
-        # self.logger.info("Playing card {} from {}".format(card_to_play, self.hand))
-        return card_to_play
-
-    def get_prediction(self, trump, predictions, players, restriction=None):
-        """Randomly return any number of wins between 0 and total number
-         of games.
-         """
-        prediction = randrange(len(self.hand))
-        if prediction == restriction:
-            if random():
-                prediction += 1
-            else:
-                prediction -= 1
-
-        self.prediction = prediction
-        return prediction
-
-    def get_trump_color(self):
-        # Randomly return any color except white.
-        return choice(Card.Card.colors[1:])
-
     def name(self):
         return "RandomPlayer"
 
 
-class AverageRandomPlayer(RandomPlayer):
+class AverageRandomPlayer(Player, RandomCardPlayer, AveragePredictionPlayer):
     """Agent that uses random cards, but chooses an 'average'
     prediction of wins and a trump color corresponding to
     the color the agent has the most of in its hand."""
 
     def __init__(self):
         super().__init__()
-
-    def get_prediction(self, trump, predictions, players, restriction=None):
-        prediction = len(self.hand) // len(predictions)
-        if prediction == restriction:
-            if random():
-                prediction += 1
-            else:
-                prediction -= 1
-        self.prediction = prediction
-        return prediction
 
     def get_trump_color(self):
         # Return the color the agent has the most of in its hand.
@@ -139,36 +76,16 @@ class AverageRandomPlayer(RandomPlayer):
         else:
             return color_counter.most_common(1)[0][0]
 
+
     def name(self):
         return "AverageRandomPlayer"
 
 
-class PredictionRandomPlayer(AverageRandomPlayer):
+class PredictionRandomPlayer(Player, RandomCardPlayer, NetworkPredictionPlayer):
 
-    def __init__(self, session, trick_prediction, featurizer= None):
+    def __init__(self, session, trick_prediction=None, featurizer=None):
         super().__init__()
-        self.session = session
-        self.trick_prediction = trick_prediction
-        if featurizer is None:
-            self.featurizer = Featurizers.Featurizer()
-        else:
-            self.featurizer = featurizer
-
-    def get_prediction(self, trump, predictions, players, restriction=None):
-        s = self.featurizer.transform_handcards(self, trump)
-        average = len(self.whole_hand) // len(players)
-        prediction = self.trick_prediction.predict(s, average)
-
-        # round prediction
-        final_pred = int(round(prediction))
-        if restriction is not None and final_pred == restriction:
-            if prediction < final_pred:
-                final_pred -= 1
-            else:
-                final_pred += 1
-        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
-
-        return final_pred
+        self.init_prediction(session, trick_prediction, featurizer)
 
     def trick_ended(self, trump):
         arr_cards = self.featurizer.transform_handcards(self, trump)

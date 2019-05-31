@@ -7,6 +7,7 @@ from random import seed, getstate, choice
 import numpy as np
 import logging
 
+MAX_ROUNDS = 20
 
 class Wizard(object):
     """

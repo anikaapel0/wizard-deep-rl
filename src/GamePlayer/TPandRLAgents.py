@@ -3,18 +3,22 @@ from GamePlayer.Estimators.PolicyEstimators import PolicyGradient
 from GamePlayer import Policies, Featurizers
 from GamePlayer.Player import AverageRandomPlayer, Player
 from GamePlayer.CardPlayer import RLCardPlayer
-from GamePlayer.PredictionPlayer import AveragePredictionPlayer
+from GamePlayer.PredictionPlayer import NetworkPredictionPlayer, AveragePredictionPlayer
+from GamePlayer.TrickPrediction import TrickPrediction
 
 import logging
 
 
-class RLAgent(Player, RLCardPlayer, AveragePredictionPlayer):
+class TPRLAgent(Player, RLCardPlayer, NetworkPredictionPlayer):
     """A computer player that learns using reinforcement learning."""
 
-    def __init__(self, session, path, estimator=None, policy=None, featurizer=None):
-        self.logger = logging.getLogger('wizard-rl.RLAgent')
+    def __init__(self, session, path, estimator=None, policy=None, featurizer=None, trick_prediction=None):
+        self.logger = logging.getLogger('wizard-rl.TPRLAgent')
+        if trick_prediction is None:
+            trick_prediction = TrickPrediction(session, path)
         super().__init__()
         self.init_player(session, path, estimator=estimator, policy=policy, featurizer=featurizer)
+        self.init_prediction(session, trick_prediction, featurizer=featurizer)
 
     def enable_training(self):
         self.training_mode = True
@@ -37,43 +41,43 @@ class RLAgent(Player, RLCardPlayer, AveragePredictionPlayer):
             self.policy.decay_epsilon()
 
     def name(self):
-        return self.estimator.name()
+        return self.estimator.name() + " TP"
 
 
-class DQNAgent(RLAgent):
+class TPDQNAgent(TPRLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
-        super(DQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                       trick_prediction=trick_prediction, session=session, path=path)
+    def __init__(self, session, path, estimator=None, policy=None, featurizer=None, trick_prediction=None):
+        super(TPDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                         trick_prediction=trick_prediction, session=session, path=path)
 
 
-class DoubleDQNAgent(RLAgent):
+class TPDoubleDQNAgent(TPRLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
+    def __init__(self, session, path, estimator=None, policy=None, featurizer=None, trick_prediction=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
 
         if estimator is None:
             assert session is not None
             estimator = ValueEstimators.DoubleDQNEstimator(session, input_shape=featurizer.get_state_size(), path=path)
-        super(DoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                             trick_prediction=trick_prediction, session=session, path=path)
+        super(TPDoubleDQNAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                               trick_prediction=trick_prediction, session=session, path=path)
 
 
-class DuelingAgent(RLAgent):
+class TPDuelingAgent(TPRLAgent):
 
-    def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
+    def __init__(self, session, path, estimator=None, policy=None, featurizer=None, trick_prediction=None):
         if featurizer is None:
             featurizer = Featurizers.Featurizer()
 
         if estimator is None:
             assert session is not None
             estimator = ValueEstimators.DuelingDQNEstimator(session, input_shape=featurizer.get_state_size(), path=path)
-        super(DuelingAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                           trick_prediction=trick_prediction, session=session, path=path)
+        super(TPDuelingAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                             trick_prediction=trick_prediction, session=session, path=path)
 
 
-class PGAgent(RLAgent):
+class TPPGAgent(TPRLAgent):
 
     def __init__(self, estimator=None, policy=None, featurizer=None, trick_prediction=None, session=None, path=None):
         if featurizer is None:
@@ -86,5 +90,5 @@ class PGAgent(RLAgent):
         if policy is None:
             policy = Policies.MaxPolicy(estimator)
 
-        super(PGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
-                                      trick_prediction=trick_prediction, session=session, path=path)
+        super(TPPGAgent, self).__init__(estimator=estimator, policy=policy, featurizer=featurizer,
+                                        trick_prediction=trick_prediction, session=session, path=path)

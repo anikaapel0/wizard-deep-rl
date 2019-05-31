@@ -1,4 +1,5 @@
 from GamePlayer.RLAgents import RLAgent, PGAgent, DQNAgent, DoubleDQNAgent, DuelingAgent
+from GamePlayer.TPandRLAgents import TPDQNAgent, TPDoubleDQNAgent, TPDuelingAgent, TPPGAgent, TPRLAgent
 from GamePlayer.Player import AverageRandomPlayer
 from Environment.Wizard import Wizard
 from Environment.Game import Game
@@ -104,12 +105,17 @@ class SelfPlayTraining(WizardTraining):
         self.score_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
     def _init_players(self, players_type, tp):
-        trick_prediction = get_tp(self.session, tp, self.path)
+        trick_prediction = TrickPrediction(self.session, self.path)
         estimator, featurizer = get_estimator(self.session, players_type, self.path)
         self.players = []
         for _ in range(self.num_players):
-            self.players.append(RLAgent(estimator=estimator, session=self.session, trick_prediction=trick_prediction,
-                                        featurizer=featurizer))
+            if tp:
+                self.players.append(
+                    TPRLAgent(session=self.session, path=self.path, estimator=estimator, trick_prediction=trick_prediction,
+                              featurizer=featurizer))
+            else:
+                self.players.append(RLAgent(session=self.session, path=self.path, estimator=estimator,
+                                            featurizer=featurizer))
 
     def play_evaluation_games(self):
         self.disable_training()
@@ -149,7 +155,7 @@ class SelfPlayTraining(WizardTraining):
             wiz = Wizard(num_players=self.num_players, players=self.players)
             wiz.play()
 
-            if i % random_agents_interval == 0:
+            if i > 0 and i % random_agents_interval == 0:
                 self.play_evaluation_games()
 
 
@@ -210,13 +216,6 @@ class TrainingAgainstOtherPlayer(WizardTraining):
             self.update_scores(scores, i)
 
 
-def get_tp(session, tp, path):
-    if tp:
-        return TrickPrediction(session=session, path=path)
-    else:
-        return None
-
-
 def get_estimator(session, player_type, path):
     featurizer = Featurizer()
     input_shape = featurizer.get_state_size()
@@ -232,16 +231,34 @@ def get_estimator(session, player_type, path):
     return estimator, featurizer
 
 
-def get_player(session, player_type, path, tp=None):
-    trick_prediction = get_tp(session, tp, path)
+def get_tp_player(session, player_type, path):
+    trick_prediction = TrickPrediction(session=session, path=path)
     if player_type == DQN_PLAYER:
-        return DQNAgent(session=session, trick_prediction=trick_prediction, path=path)
+        return TPDQNAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == DDQN_PLAYER:
-        return DoubleDQNAgent(session=session, trick_prediction=trick_prediction, path=path)
+        return TPDoubleDQNAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == PG_PLAYER:
-        return PGAgent(session=session, trick_prediction=trick_prediction, path=path)
+        return TPPGAgent(session=session, trick_prediction=trick_prediction, path=path)
     elif player_type == DUELING_PLAYER:
-        return DuelingAgent(session=session, trick_prediction=trick_prediction, path=path)
+        return TPDuelingAgent(session=session, trick_prediction=trick_prediction, path=path)
+
+
+def get_average_player(session, player_type, path):
+    if player_type == DQN_PLAYER:
+        return TPDQNAgent(session=session, path=path)
+    elif player_type == DDQN_PLAYER:
+        return DoubleDQNAgent(session=session, path=path)
+    elif player_type == PG_PLAYER:
+        return PGAgent(session=session, path=path)
+    elif player_type == DUELING_PLAYER:
+        return DuelingAgent(session=session, path=path)
+
+
+def get_player(session, player_type, path, tp=False):
+    if tp:
+        get_tp_player(session, player_type, path)
+    else:
+        get_average_player(session, player_type, path)
 
 
 def log_players(logger, players):
