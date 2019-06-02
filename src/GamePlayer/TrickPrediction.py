@@ -114,8 +114,8 @@ class TrickPrediction(object):
 
     def predict(self, s, average):
         game = np.sum(s[:Card.DIFFERENT_CARDS])
-        if not self._trained:
-            return average
+        # if not self._trained:
+        #     return average
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
         summ, histo, prediction = self._session.run([self._sum_histograms[game], self._histos[game], self._prediction], feed_dict)
         self._train_writer.add_summary(summ)
