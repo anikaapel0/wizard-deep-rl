@@ -76,7 +76,6 @@ class AverageRandomPlayer(Player, RandomCardPlayer, AveragePredictionPlayer):
         else:
             return color_counter.most_common(1)[0][0]
 
-
     def name(self):
         return "AverageRandomPlayer"
 

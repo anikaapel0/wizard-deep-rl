@@ -37,7 +37,7 @@ class Wizard(object):
         self.track_tricks = track_tricks
         self.featurizer = Featurizer()
         self.history = [[] for _ in range(2)]
-        self.history[0] = np.zeros((self.games_to_play * num_players, Card.DIFFERENT_CARDS))
+        self.history[0] = np.zeros((self.games_to_play * num_players, Card.DIFFERENT_CARDS + len(Card.colors)))
         self.history[1] = np.zeros(self.games_to_play * num_players)
 
     def play(self):

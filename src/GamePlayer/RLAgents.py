@@ -30,9 +30,6 @@ class RLAgent(Player, RLCardPlayer, AveragePredictionPlayer):
 
     def trick_ended(self, trump):
         if self.training_mode:
-            if self.trick_prediction is not None:
-                arr_cards = self.featurizer.transform_handcards(self, trump)
-                self.trick_prediction.update(arr_cards, self.prediction, self.wins)
 
             self.policy.decay_epsilon()
 
