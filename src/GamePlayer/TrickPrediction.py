@@ -32,12 +32,14 @@ class TrickPrediction(object):
         self._session = session
         self._trained = False
         self._merged = None
+        self._histos = [None] * MAX_ROUNDS
+        self._sum_histograms = [None] * MAX_ROUNDS
         self._train_writer = None
         self.training_rounds = training_rounds
         self._init_model()
 
     def _init_model(self):
-        with tf.variable_scope("Input_Data"):
+        with tf.variable_scope("TP_Input_Data"):
             self._x = tf.placeholder("float", [None, self.input_shape], name="handcards")
             self._y = tf.placeholder("float", [None, self.output_shape], name="num_tricks")
 
@@ -167,7 +169,6 @@ class TrickPrediction(object):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
         summ, histo, prediction = self._session.run([self._sum_histograms[game], self._histos[game], self._prediction], feed_dict)
         self._train_writer.add_summary(summ)
-        pred = prediction[0, 0]
 
-        return pred
+        return prediction[0, 0]
 
