@@ -10,7 +10,8 @@ class PolicyGradient(Estimator):
     n_hidden_1 = 500
     n_hidden_2 = 250
 
-    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500, path="log/train-summary"):
+    def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, gamma=0.99, update=1000, batch_size=500,
+                 path="log/train-summary", save_update=500):
         self.logger = logging.getLogger('wizard-rl.PolicyGradient')
         self.memory = []
         self.memory_temp = []
@@ -24,6 +25,8 @@ class PolicyGradient(Estimator):
         self.learning_rate = 0.001
         self.batch_size = batch_size
         self.path = path
+        self.saver = None
+        self.save_update = save_update
         self._x = None
         self._actions = None
         self._rewards = None
@@ -63,6 +66,8 @@ class PolicyGradient(Estimator):
         sum_out_w = tf.summary.histogram("prob_out", out)
         self._merged = tf.summary.merge([sum_loss, sum_hidden_w, sum_out_w])
         self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
+
+        self.saver = tf.train.Saver()
 
     def update(self, s, a, r, s_prime):
         self.memory_temp.append([s, a, r, s_prime])
@@ -124,14 +129,17 @@ class PolicyGradient(Estimator):
 
         self._sum_writer.add_summary(summary, self.t_train)
 
+        if self.t_train % self.save_update == 0:
+            self.save()
+
     def predict(self, s):
         feed_dict = {self._x: np.array(s)[np.newaxis, :]}
         probs, logits = self.session.run([self._probs, self._logits], feed_dict)
         return probs
 
-    def save(self, name):
-        raise NotImplementedError("This method must be implemented by"
-                                  "your Estimator class")
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_pg.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
 
     def load(self, name):
         raise NotImplementedError("This method must be implemented by"

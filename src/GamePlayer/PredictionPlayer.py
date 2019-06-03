@@ -76,7 +76,7 @@ class NetworkPredictionPlayer(PredictionPlayer):
                 final_pred -= 1
             else:
                 final_pred += 1
-        self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
+        # self.logger.info("Prediction: {}, Hand: {}, Trumpf: {}".format(final_pred, self.whole_hand, trump))
 
         return final_pred
 

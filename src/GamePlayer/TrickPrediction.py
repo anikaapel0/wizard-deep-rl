@@ -12,7 +12,8 @@ from Environment.Card import Card
 class TrickPrediction(object):
     n_hidden_1 = 40
 
-    def __init__(self, session, path, input_shape=59, memory=10000, batch_size=1024, training_rounds=200, learning_rate=0.005):
+    def __init__(self, session, path, input_shape=59, memory=10000, batch_size=1024, training_rounds=200,
+                 learning_rate=0.005, save_update=500):
         self.logger = logging.getLogger('wizard-rl.TrickPrediction')
         self.path = path
         self.input_shape = input_shape
@@ -21,6 +22,8 @@ class TrickPrediction(object):
         self.memory = [([], 0, 0)] * memory
         self.batch_size = batch_size
         self.update_rate = max(1, batch_size // 8)
+        self.save_update = save_update
+        self.saver = None
         self.t = 0
         self.t_train = 0
         self._prediction = None
@@ -62,6 +65,8 @@ class TrickPrediction(object):
             self._sum_histograms[i] = tf.summary.merge([self._histos[i]])
 
         self._train_writer = tf.summary.FileWriter(self.path, self._session.graph)
+
+        self.saver = tf.train.Saver()
 
     def update(self, cards, num_forecast, num_tricks):
         """
@@ -119,6 +124,9 @@ class TrickPrediction(object):
         self.logger.info("Epoch {} - Loss: {}".format(self.t_train, loss))
         self._train_writer.add_summary(summary, self.t_train)
 
+        if self.t_train % self.save_update == 0:
+            self.save()
+
     def collect_training_data(self, players):
         x = None
         y = None
@@ -171,4 +179,9 @@ class TrickPrediction(object):
         self._train_writer.add_summary(summ)
 
         return prediction[0, 0]
+
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_tp.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
 

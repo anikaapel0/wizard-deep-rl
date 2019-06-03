@@ -185,8 +185,12 @@ class DQNEstimator(ValueEstimator):
         # hard update
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_dqn.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self, name="model-dqn"):
-        self.saver.restore(self.session, self.path + "/models/model.ckpt")
+        self.saver.restore(self.session, self.path + "/models/model_dqn.ckpt")
 
     def name(self):
         return "DQN"
@@ -311,8 +315,12 @@ class DoubleDQNEstimator(ValueEstimator):
         # hard update
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_doubledqn.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self, name="model-doubledqn"):
-        save_path = self.saver.restore(self.session, self.path + "/models/model.ckpt")
+        save_path = self.saver.restore(self.session, self.path + "/models/model_doubledqn.ckpt")
 
     def name(self):
         return "Double DQN"
@@ -424,7 +432,11 @@ class DuelingDQNEstimator(ValueEstimator):
     def name(self):
         return "Dueling DQN"
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_dueling.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self):
-        self.saver.restore(self.session, self.path + "/models/model.ckpt")
+        self.saver.restore(self.session, self.path + "/models/model_dueling.ckpt")
 
 
