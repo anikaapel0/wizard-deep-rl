@@ -181,7 +181,7 @@ class TrickPrediction(object):
         return prediction[0, 0]
 
     def save(self):
-        save_path = self.saver.save(self.session, self.path + "/models/model_tp.ckpt")
+        save_path = self.saver.save(self._session, self.path + "/models/model_tp.ckpt")
         self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
 
 
