@@ -1,12 +1,13 @@
-from GameUtilities.Game import Game
-from Player import AverageRandomPlayer
-from GameUtilities.Card import Card
-from Featurizers import Featurizer
+from Environment.Game import Game
+from GamePlayer.Player import AverageRandomPlayer
+from Environment.Card import Card
+from GamePlayer.Featurizers import Featurizer
 
 from random import seed, getstate, choice
 import numpy as np
 import logging
 
+MAX_ROUNDS = 20
 
 class Wizard(object):
     """
@@ -36,7 +37,7 @@ class Wizard(object):
         self.track_tricks = track_tricks
         self.featurizer = Featurizer()
         self.history = [[] for _ in range(2)]
-        self.history[0] = np.zeros((self.games_to_play * num_players, Card.DIFFERENT_CARDS))
+        self.history[0] = np.zeros((self.games_to_play * num_players, Card.DIFFERENT_CARDS + len(Card.colors)))
         self.history[1] = np.zeros(self.games_to_play * num_players)
 
     def play(self):

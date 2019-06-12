@@ -3,9 +3,9 @@ import numpy as np
 import random
 import logging
 
-from Estimators.Estimators import Estimator
-from GameUtilities.Card import Card
-from GameUtilities.Card import cards_to_bool_array
+from GamePlayer.Estimators.Estimators import Estimator
+from Environment.Card import Card
+from Environment.Card import cards_to_bool_array
 
 
 class ValueEstimator(Estimator):
@@ -63,15 +63,16 @@ class ValueEstimator(Estimator):
 
 
 class DQNEstimator(ValueEstimator):
-    n_hidden_1 = 256
+    n_hidden_1 = 1024
     n_hidden_2 = 512
-    n_hidden_3 = 1024
+    n_hidden_3 = 256
 
     def __init__(self, session, input_shape, limit_update=False, output_shape=Card.DIFFERENT_CARDS, memory=100000,
                  batch_size=1024, gamma=0.95, target_update=1000, save_update=5000, path="log/dqn"):
         super(DQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
         self.logger = logging.getLogger('wizard-rl.DQNEstimator')
         self.gamma = gamma
+        self.learning_rate = 0.0005
         self.limit_update = limit_update
         self.save_update = save_update
         self._prediction = None
@@ -110,14 +111,14 @@ class DQNEstimator(ValueEstimator):
         with tf.variable_scope("Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self._prediction)
             # self._loss = tf.losses.huber_loss(self._y, self._prediction)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_dqn', self._loss)
 
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
-        self.saver = tf.train.Saver
+        self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'Q_Primary': self._prediction, 'Q_Target': self._target})
 
     def update_from_experience(self):
@@ -184,8 +185,12 @@ class DQNEstimator(ValueEstimator):
         # hard update
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_dqn.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self, name="model-dqn"):
-        self.saver.restore(self.session, self.path + "/models/model.ckpt")
+        self.saver.restore(self.session, self.path + "/models/model_dqn.ckpt")
 
     def name(self):
         return "DQN"
@@ -197,7 +202,7 @@ class DoubleDQNEstimator(ValueEstimator):
     n_hidden_3 = 1024
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024, gamma=0.95,
-                 target_update=1000, save_update=5000, path="log/doubledqn/"):
+                 target_update=1000, save_update=5000, path="log"):
         super(DoubleDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, True, target_update)
         self.logger = logging.getLogger('wizard-rl.DoubleDQNEstimator')
         self.gamma = gamma
@@ -244,7 +249,7 @@ class DoubleDQNEstimator(ValueEstimator):
         summary = tf.summary.scalar('loss_doubledqn', self._loss)
 
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path, self.session.graph)
 
         self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'Double_Q_Primary': self._prediction, 'Double_Q_Target': self._target})
@@ -310,17 +315,12 @@ class DoubleDQNEstimator(ValueEstimator):
         # hard update
         self.session.run([v_t.assign(v) for v_t, v in zip(q_target_vars, q_vars)])
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_doubledqn.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self, name="model-doubledqn"):
-        save_path = self.saver.restore(self.session, self.path + "/models/model.ckpt")
-
-    def print_graph(self):
-        graph = tf.get_default_graph()
-
-        with tf.Session(graph=graph) as sess:
-            writer = tf.summary.FileWriter(self.path + "/graph", sess.graph)
-            # sess.run(self._prediction, feed_dict)
-            writer.close()
-        self.logger.info("Done printing graph")
+        save_path = self.saver.restore(self.session, self.path + "/models/model_doubledqn.ckpt")
 
     def name(self):
         return "Double DQN"
@@ -331,11 +331,12 @@ class DuelingDQNEstimator(ValueEstimator):
     n_hidden_2 = 512
 
     def __init__(self, session, input_shape, output_shape=Card.DIFFERENT_CARDS, memory=100000, batch_size=1024,
-                 gamma=0.95, path="log/dueling", save_update=5000):
+                 gamma=0.95, path="log", save_update=5000):
         super(DuelingDQNEstimator, self).__init__(session, path, input_shape, output_shape, memory, batch_size, False)
         self.logger = logging.getLogger('wizard-rl.DuelingDQNEstimator')
 
         self.gamma = gamma
+        self.learning_rate = 0.001
         self.save_update = save_update
         self.t_train = 0
 
@@ -358,25 +359,23 @@ class DuelingDQNEstimator(ValueEstimator):
             hidden1_v = tf.layers.dense(self._state, self.n_hidden_1)
             hidden2_v = tf.layers.dense(hidden1_v, self.n_hidden_2)
 
-            out_v = tf.layers.dense(hidden2_v, 1)
+            value = tf.layers.dense(hidden2_v, 1)
 
             hidden1_a = tf.layers.dense(self._state, self.n_hidden_1)
             hidden2_a = tf.layers.dense(hidden1_a, self.n_hidden_2)
 
-            out_a = tf.layers.dense(hidden2_a, self.output_shape)
-            mean = tf.reduce_mean(out_a, axis=1)
+            advantage = tf.layers.dense(hidden2_a, self.output_shape)
 
-            temp = out_a + out_v
-
-            self.q_values = out_v + tf.subtract(out_a, tf.reduce_mean(out_a, axis=1, keep_dims=True))
+            self.q_values = value + tf.subtract(advantage, tf.reduce_mean(advantage, axis=1, keepdims=True))
+            # self.q_values = tf.reduce_sum(tf.multiply(self.output, self.actions_), axis=1)
 
         with tf.variable_scope("DuelingDQN_Learning"):
             self._loss = tf.losses.mean_squared_error(self._y, self.q_values)
-            self._optimizer = tf.train.AdamOptimizer().minimize(self._loss)
+            self._optimizer = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate).minimize(self._loss)
 
         summary = tf.summary.scalar('loss_dueling', self._loss)
         self._merged = tf.summary.merge([summary])
-        self._sum_writer = tf.summary.FileWriter(self.path + "/train-summary", self.session.graph)
+        self._sum_writer = tf.summary.FileWriter(self.path , self.session.graph)
 
         self.saver = tf.train.Saver()
         # self.saver = tf.train.Saver({'q-values-dueling':self.q_values})
@@ -433,7 +432,11 @@ class DuelingDQNEstimator(ValueEstimator):
     def name(self):
         return "Dueling DQN"
 
+    def save(self):
+        save_path = self.saver.save(self.session, self.path + "/models/model_dueling.ckpt")
+        self.logger.info("{}: Model saved in {}".format(self.name(), save_path))
+
     def load(self):
-        self.saver.restore(self.session, self.path + "/models/model.ckpt")
+        self.saver.restore(self.session, self.path + "/models/model_dueling.ckpt")
 
 

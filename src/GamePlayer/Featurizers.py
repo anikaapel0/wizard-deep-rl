@@ -1,4 +1,4 @@
-from GameUtilities import Card
+from Environment import Card
 import random
 from copy import deepcopy
 import logging
@@ -14,7 +14,7 @@ class Featurizer(object):
         self.count_cards = count_cards
 
     def transform_handcards(self, player, trump):
-        hand_arr = self.cards_to_arr(player.hand)
+        hand_arr = self.cards_to_arr(player.whole_hand)
         trump_color = self.color_to_bin_arr(trump)
 
         return hand_arr + trump_color
@@ -141,3 +141,7 @@ class Featurizer(object):
         count += 126
 
         return count
+
+
+def default_featurizer_state_size():
+    return Featurizer().get_state_size()

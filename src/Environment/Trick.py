@@ -1,4 +1,4 @@
-from GameUtilities.Card import is_new_winner
+from Environment.Card import is_new_winner
 import logging
 
 

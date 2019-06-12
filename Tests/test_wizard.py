@@ -1,20 +1,20 @@
 from unittest import TestCase
 from random import seed
-from Player import RandomPlayer, AverageRandomPlayer
-from RLAgents import RLAgent
-import plotting
+from GamePlayer.Player import RandomPlayer, AverageRandomPlayer
+from GamePlayer.RLAgents import RLAgent
+from Utils import plotting
 import numpy as np
 
 
 class TestWizard(TestCase):
     def test_play(self):
-        from GameUtilities.Wizard import Wizard
+        from Environment.Wizard import Wizard
         seed(2)
         wiz = Wizard(4)
         self.assertIsNotNone(wiz.play())
 
     def test_play_with_RLAgent(self):
-        from GameUtilities.Wizard import Wizard
+        from Environment.Wizard import Wizard
         seed(2)
         players = [RandomPlayer() for _ in range(5)]
         players.append(RLAgent())
@@ -41,7 +41,7 @@ class TestWizard(TestCase):
     """
 
     def test_several_RL_one_estimator(self):
-        from GameUtilities.Wizard import Wizard
+        from Environment.Wizard import Wizard
         games = 20000
         players = [RLAgent()]
         players[0].load_estimator()

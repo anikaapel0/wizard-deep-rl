@@ -1,6 +1,6 @@
 import numpy as np
-from GameUtilities.Card import Card
-from Estimators.PolicyEstimators import PolicyGradient
+from Environment.Card import Card
+from GamePlayer.Estimators.PolicyEstimators import PolicyGradient
 import logging
 
 
@@ -59,6 +59,8 @@ class Policy(object):
         playable_bool = np.array(playable).astype(bool)
         return playable_bool
 
+    def decay_epsilon(self):
+        pass
 
 class MaxPolicy(Policy):
 
@@ -76,15 +78,13 @@ class MaxPolicy(Policy):
 
 class EGreedyPolicy(Policy):
 
-    def __init__(self, estimator, epsilon, decay=0.99):
+    def __init__(self, estimator, epsilon, decay=0.9999):
         super().__init__(estimator)
         self.logger = logging.getLogger('wizard-rl.EGreedyPolicy')
 
         self.epsilon = epsilon
         self.decay_rate = decay
-        # In case we need to reset epsilon.
-        self.original_epsilon = epsilon
-        self.curr_epsilon = 1 - epsilon
+        self.curr_epsilon = 1
 
     def get_action(self, x):
         """
@@ -98,8 +98,7 @@ class EGreedyPolicy(Policy):
             each action available.
 
         """
-        self.curr_epsilon *= self.decay_rate
-        epsilon = self.curr_epsilon + self.epsilon
+
         num_a = Card.DIFFERENT_CARDS
         playable_bool = self.get_playable_bool(x)
         q_playable = self.get_playable_predictions(x)
@@ -108,12 +107,19 @@ class EGreedyPolicy(Policy):
         probs = np.zeros(num_a)
         # Only potential actions are the playable ones.
         # assign epsilon probabilities to every potential action.
-        probs[playable_bool] += epsilon/sum(playable_bool)
+        probs[playable_bool] += self.curr_epsilon/sum(playable_bool)
         # self.logger.info(q_playable)
         # Find the greedy action
         greedy_a = np.argmax(q_playable)
         # Give it the highest probability.
-        probs[greedy_a] += (1-epsilon)
+        probs[greedy_a] += (1-self.curr_epsilon)
         # self.logger.info(probs)
         a = np.random.choice(len(probs), p=probs)
         return a
+
+    def decay_epsilon(self):
+        self.curr_epsilon *= self.decay_rate
+        if self.curr_epsilon < self.epsilon:
+            self.curr_epsilon = self.epsilon
+            self.decay_rate = 0
+
